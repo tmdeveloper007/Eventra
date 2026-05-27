@@ -8,7 +8,7 @@ const readRegistrations = () => {
     const data = localStorage.getItem(STORAGE_KEY);
     return data ? JSON.parse(data) : {};
   } catch (error) {
-    
+    console.warn("Failed to parse event registrations from localStorage:", error);
     return {};
   }
 };
