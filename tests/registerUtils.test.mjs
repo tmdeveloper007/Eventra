@@ -18,40 +18,30 @@ globalThis.localStorage = {
 
 import { isAlreadyRegistered, saveRegistration } from "../src/utils/registerUtils.js";
 
-// Test isAlreadyRegistered when no registrations exist
-assert.equal(isAlreadyRegistered("event-1", "user@example.com"), false);
+store["eventRegistrations"] = "";
+assert.equal(isAlreadyRegistered("event-1", "user@example.com"), false, "isAlreadyRegistered returns false when no registrations");
 
-// Test saveRegistration
 saveRegistration("event-1", "User@Example.Com");
-assert.equal(isAlreadyRegistered("event-1", "user@example.com"), true);
+assert.equal(isAlreadyRegistered("event-1", "user@example.com"), true, "saveRegistration and isAlreadyRegistered work together");
 
-// Test case insensitivity
-assert.equal(isAlreadyRegistered("event-1", "USER@EXAMPLE.COM"), true);
+assert.equal(isAlreadyRegistered("event-1", "USER@EXAMPLE.COM"), true, "isAlreadyRegistered is case-insensitive");
 
-// Test saving multiple registrations for the same event
 saveRegistration("event-1", "other@example.com");
-assert.equal(isAlreadyRegistered("event-1", "other@example.com"), true);
-assert.equal(isAlreadyRegistered("event-1", "third@example.com"), false);
+assert.equal(isAlreadyRegistered("event-1", "other@example.com"), true, "saveRegistration handles multiple emails per event");
+assert.equal(isAlreadyRegistered("event-1", "third@example.com"), false, "saveRegistration doesn't add duplicate emails");
 
-// Test saving for a different event
 saveRegistration("event-2", "third@example.com");
-assert.equal(isAlreadyRegistered("event-2", "third@example.com"), true);
-assert.equal(isAlreadyRegistered("event-1", "third@example.com"), false);
+assert.equal(isAlreadyRegistered("event-2", "third@example.com"), true, "saveRegistration handles multiple events");
+assert.equal(isAlreadyRegistered("event-1", "third@example.com"), false, "saveRegistration correctly separates events");
 
-// Test corrupted localStorage data is treated as empty
-localStorage.clear();
-localStorage.setItem("eventRegistrations", "{broken");
+store["eventRegistrations"] = "{broken";
+assert.equal(isAlreadyRegistered("event-3", "broken@example.com"), false, "isAlreadyRegistered handles corrupted localStorage");
 
-let warningCount = 0;
-const originalWarn = console.warn;
-console.warn = () => {
-  warningCount += 1;
-};
+saveRegistration("event-3", "broken@example.com");
+assert.equal(isAlreadyRegistered("event-3", "broken@example.com"), true, "saveRegistration works after corrupted data");
 
-try {
-  assert.equal(isAlreadyRegistered("event-3", "broken@example.com"), false);
-  saveRegistration("event-3", "broken@example.com");
-  assert.equal(isAlreadyRegistered("event-3", "broken@example.com"), true);
-} finally {
-  console.warn = originalWarn;
-}
+assert.equal(isAlreadyRegistered("", "test@example.com"), false, "isAlreadyRegistered returns false for empty eventId");
+assert.equal(isAlreadyRegistered("event-1", ""), false, "isAlreadyRegistered returns false for empty email");
+assert.equal(isAlreadyRegistered(null, "test@example.com"), false, "isAlreadyRegistered returns false for null eventId");
+
+console.log("registerUtils tests passed ✓");
