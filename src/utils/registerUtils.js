@@ -5,6 +5,7 @@ const STORAGE_KEY = "eventRegistrations";
 const normalizeEmail = (email) => (email || "").trim().toLowerCase();
 
 const readRegistrations = () => {
+  if (typeof window === "undefined") return {};
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     const parsed = safeJsonParse(data, {});
@@ -15,21 +16,19 @@ const readRegistrations = () => {
     }
     return migrated;
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.warn("[RegisterUtils] Failed to read registrations:", error);
     return {};
   }
 };
 
 const writeRegistrations = (registrations) => {
+  if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(registrations));
   } catch {
     // localStorage may be unavailable or full; keep the UI functional.
   }
 };
-
-
 
 /**
  * localStorage is used here only for UX hints.
