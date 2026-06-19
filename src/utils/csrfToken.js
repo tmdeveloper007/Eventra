@@ -27,6 +27,7 @@ const getCSRFEnforcementMode = () => {
  * @returns {string|null}
  */
 export function getCSRFTokenFromMeta() {
+  if (typeof document === "undefined") return null;
   const meta = document.querySelector(`meta[name="${CSRF_META_NAME}"]`);
   return meta ? meta.getAttribute("content") : null;
 }
@@ -37,6 +38,7 @@ export function getCSRFTokenFromMeta() {
  * @returns {string|null}
  */
 export function getCSRFTokenFromCookie(name = CSRF_COOKIE_NAME) {
+  if (typeof document === "undefined") return null;
   const cookies = document.cookie.split(";").map((c) => c.trim());
   for (const cookie of cookies) {
     if (cookie.startsWith(`${name}=`)) {
