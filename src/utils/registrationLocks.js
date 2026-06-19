@@ -1,19 +1,23 @@
 const LOCK_EXPIRY_MS = 600000; // 10 minutes lease time
 
+const isStorageAvailable = () =>
+  typeof window !== "undefined" && Boolean(window.localStorage);
+
 export function acquireRegistrationLock(eventId) {
+  if (!isStorageAvailable()) return false;
   try {
     const now = Date.now();
     const lockKey = `reg_lock_${eventId}`;
-    const existing = localStorage.getItem(lockKey);
-    
+    const existing = window.localStorage.getItem(lockKey);
+
     if (existing) {
       const lockTime = Number(existing);
       if (now - lockTime < LOCK_EXPIRY_MS) {
         return false; // Lock active
       }
     }
-    
-    localStorage.setItem(lockKey, String(now));
+
+    window.localStorage.setItem(lockKey, String(now));
     return true;
   } catch {
     return false;
@@ -21,8 +25,9 @@ export function acquireRegistrationLock(eventId) {
 }
 
 export function releaseRegistrationLock(eventId) {
+  if (!isStorageAvailable()) return false;
   try {
-    localStorage.removeItem(`reg_lock_${eventId}`);
+    window.localStorage.removeItem(`reg_lock_${eventId}`);
     return true;
   } catch {
     return false;
