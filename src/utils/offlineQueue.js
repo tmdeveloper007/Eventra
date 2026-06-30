@@ -66,9 +66,10 @@ const DB_VERSION = 2;
 // Internal: rescue items from localStorage mirror before schema wipe
 // ---------------------------------------------------------------------------
 const _rescueFromLocalStorage = () => {
+  if (typeof localStorage === "undefined") return [];
   try {
-          const raw = localStorage.getItem(QUEUE_KEY);
-          return safeJsonParse(raw, []);
+    const raw = localStorage.getItem(QUEUE_KEY);
+    return safeJsonParse(raw, []);
   } catch {
     return [];
   }
