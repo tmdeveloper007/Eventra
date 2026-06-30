@@ -1,6 +1,6 @@
 import { validateSignature } from "../utils/signatureValidator.js";
 
-export function verifyRequestSignature(
+export async function verifyRequestSignature(
   req,
   secret
 ) {
@@ -13,7 +13,7 @@ export function verifyRequestSignature(
   const signature =
     req.headers["x-signature"];
 
-  return validateSignature(
+  return await validateSignature(
     req.body,
     timestamp,
     nonce,
