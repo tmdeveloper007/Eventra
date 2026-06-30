@@ -26,6 +26,7 @@ const CACHE_KEYS_PREFIX = [
 ];
 
 export const clearAuthStorage = () => {
+  if (typeof window === 'undefined') return false;
   try {
     // Clear known session keys
     SESSION_KEYS.forEach((key) => {
@@ -59,6 +60,7 @@ export const clearAuthCookies = () => {
 };
 
 export const invalidateSession = async () => {
+  if (typeof window === 'undefined') return;
   try {
     // Notify backend to invalidate server-side session
     await fetch("/api/auth/logout", {
@@ -85,6 +87,7 @@ export const invalidateSession = async () => {
 };
 
 export const isSessionValid = () => {
+  if (typeof window === 'undefined') return false;
   try {
     const token =
       localStorage.getItem("token") ||
