@@ -135,8 +135,11 @@ const useBookmarks = (userId = "guest") => {
       setBookmarks(fresh);
     };
 
-    window.addEventListener("storage", handleStorageEvent);
-    return () => window.removeEventListener("storage", handleStorageEvent);
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", handleStorageEvent);
+      return () => window.removeEventListener("storage", handleStorageEvent);
+    }
+    return () => {};
   }, []);
 
   // Cache bookmarks in a Set for O(1) lookups
