@@ -22,6 +22,9 @@ export const MAX_LOGIN_ATTEMPTS = 5;
  * @returns {{ attempts: number, lockoutUntil: number }}
  */
 export function readPersistedRateLimit() {
+  if (typeof window === 'undefined' || !window.sessionStorage) {
+    return { attempts: 0, lockoutUntil: 0 };
+  }
   try {
     const rawAttempts = sessionStorage.getItem(STORAGE_KEY_ATTEMPTS);
     const rawLockout = sessionStorage.getItem(STORAGE_KEY_LOCKOUT_UNTIL);
@@ -52,6 +55,9 @@ export function readPersistedRateLimit() {
  * @param {number} lockoutUntil - Unix timestamp (ms), 0 if not locked.
  */
 export function persistRateLimit(attempts, lockoutUntil) {
+  if (typeof window === 'undefined' || !window.sessionStorage) {
+    return;
+  }
   try {
     sessionStorage.setItem(STORAGE_KEY_ATTEMPTS, String(attempts));
     sessionStorage.setItem(STORAGE_KEY_LOCKOUT_UNTIL, String(lockoutUntil));
@@ -66,6 +72,9 @@ export function persistRateLimit(attempts, lockoutUntil) {
  * Call this on successful login or intentional reset.
  */
 export function clearPersistedRateLimit() {
+  if (typeof window === 'undefined' || !window.sessionStorage) {
+    return;
+  }
   try {
     sessionStorage.removeItem(STORAGE_KEY_ATTEMPTS);
     sessionStorage.removeItem(STORAGE_KEY_LOCKOUT_UNTIL);
