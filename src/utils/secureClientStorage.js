@@ -50,6 +50,7 @@ const sanitizeValue = (value) => {
 };
 
 export const safeSet = (key, value, useSession = false) => {
+  if (typeof window === "undefined") return false;
   try {
     if (isSensitiveKey(key)) {
       console.warn(`[SecureStorage] Blocked storing sensitive key: "${key}"`);
@@ -64,6 +65,7 @@ export const safeSet = (key, value, useSession = false) => {
 };
 
 export const safeGet = (key, useSession = false) => {
+  if (typeof window === "undefined") return null;
   try {
     const storage = useSession ? sessionStorage : localStorage;
     const value = storage.getItem(key);
@@ -79,6 +81,7 @@ export const safeGet = (key, useSession = false) => {
 };
 
 export const safeRemove = (key, useSession = false) => {
+  if (typeof window === "undefined") return false;
   try {
     const storage = useSession ? sessionStorage : localStorage;
     storage.removeItem(key);
@@ -89,6 +92,7 @@ export const safeRemove = (key, useSession = false) => {
 };
 
 export const auditStorage = () => {
+  if (typeof window === "undefined") return [];
   const issues = [];
   try {
     // Check localStorage
@@ -116,6 +120,7 @@ export const auditStorage = () => {
 };
 
 export const cleanSensitiveData = () => {
+  if (typeof window === "undefined") return false;
   try {
     [...Object.keys(localStorage)].forEach((key) => {
       if (isSensitiveKey(key)) {
