@@ -639,3 +639,19 @@ class SseMultiplexer {
 
 // Export single singleton instance across entire application scope
 export const sseMultiplexer = new SseMultiplexer();
+
+/**
+ * Clean up the SSE multiplexer singleton.
+ *
+ * Call this when unmounting React components, during test teardown, or before
+ * hot-module replacement to stop all intervals, close EventSource connections,
+ * release the Web Locks, and remove the localStorage heartbeat key.
+ *
+ * Without this, intervals accumulate on repeated module instantiation (e.g. HMR),
+ * leading to memory leaks and duplicate SSE connections.
+ *
+ * @example
+ *   // In a React component unmount
+ *   useEffect(() => () => teardownSseMultiplexer(), []);
+ */
+export const teardownSseMultiplexer = () => sseMultiplexer.teardown();
