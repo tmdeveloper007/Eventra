@@ -1,5 +1,11 @@
 import { Trophy, Award, Star, Zap } from "lucide-react";
 
+export const LABEL_POINTS = {
+  gssoclevel1: 1,
+  gssoclevel2: 1,
+  gssoclevel3: 1,
+};
+
 export const DIFFICULTY_POINTS = {
   "level:beginner":     20,
   "level:intermediate": 35,
