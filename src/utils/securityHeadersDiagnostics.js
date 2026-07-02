@@ -1,4 +1,5 @@
 export const getSecurityHeadersDiagnostics = () => {
+  if (typeof document === 'undefined') return []; // SSR guard
   const diagnostics = [];
 
   const cspMeta = document.querySelector(
