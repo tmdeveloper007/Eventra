@@ -18,7 +18,7 @@ const isBrowserOnline = () =>
 export const useCloudSessionRecovery = ({
   user = null,
   isAuthenticated = false,
-  storage = globalThis.localStorage,
+  storage = typeof globalThis !== 'undefined' ? globalThis.localStorage : undefined,
 } = {}) => {
   const userId = user?.id || user?.userId || user?.email || "";
   const [cloudSessions, setCloudSessions] = useState([]);
