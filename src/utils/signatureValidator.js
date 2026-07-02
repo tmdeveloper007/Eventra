@@ -53,6 +53,7 @@ export async function validateSignature(
   signature,
   secret
 ) {
+  _ensureStarted();
   const now = Date.now();
 
   if (!timestamp || !nonce || !signature) {
@@ -97,16 +98,33 @@ export async function validateSignature(
   };
 }
 
-const cleanupInterval = setInterval(() => {
-  const now = Date.now();
+let _cleanupInterval = null;
 
-  for (const [nonce, timestamp] of usedNonces) {
-    if (now - timestamp > MAX_REQUEST_AGE_MS) {
-      usedNonces.delete(nonce);
+const _startCleanupInterval = () => {
+  if (_cleanupInterval) return;
+  _cleanupInterval = setInterval(() => {
+    const now = Date.now();
+    for (const [nonce, timestamp] of usedNonces) {
+      if (now - timestamp > MAX_REQUEST_AGE_MS) {
+        usedNonces.delete(nonce);
+      }
     }
-  }
-}, 60000);
+  }, 60000);
+};
 
-if (cleanupInterval && typeof cleanupInterval.unref === "function") {
-  cleanupInterval.unref();
-}
+// Stop nonce cleanup interval — exported for tests and hot-reload scenarios
+export const stopNonceCleanup = () => {
+  if (_cleanupInterval) {
+    clearInterval(_cleanupInterval);
+    _cleanupInterval = null;
+  }
+};
+
+// Start lazily on first validateSignature call
+let _started = false;
+const _ensureStarted = () => {
+  if (!_started) {
+    _started = true;
+    _startCleanupInterval();
+  }
+};
