@@ -56,15 +56,39 @@ export function getRelativeTime(dateInput) {
   });
 }
 
+/**
+ * Returns true if a date string already contains a time component.
+ * Used to avoid double-appending time to ISO datetime strings.
+ */
+const hasTimeComponent = (dateStr) => {
+  if (!dateStr || typeof dateStr !== "string") return false;
+  // ISO datetime: "2026-06-12T10:00:00Z" or "2026-06-12T10:00:00+05:30"
+  if (/^\d{4}-\d{2}-\d{2}T/.test(dateStr)) return true;
+  // Time-only string: "10:00", "10:00 AM"
+  if (/^\d{1,2}:\d{2}/.test(dateStr.trim())) return true;
+  return false;
+};
+
 export function getSmartDateLabel(dateInput, timeInput = "") {
   if (!dateInput) return "TBD";
 
   const parsed = new Date(dateInput);
   if (isNaN(parsed.getTime())) return "TBD";
 
-  const relative = getRelativeTime(timeInput ? `${dateInput} ${timeInput}` : dateInput);
+  // If dateInput already contains a time component (e.g. ISO datetime string),
+  // pass it directly to getRelativeTime — do NOT append timeInput to it.
+  // Previously the function concatenated `${dateInput} ${timeInput}` regardless,
+  // producing unparseable strings like "2026-06-12T10:00:00Z 10:00 AM" that
+  // caused getRelativeTime to return "TBD" instead of a relative label.
+  const relativeInput = hasTimeComponent(dateInput)
+    ? dateInput
+    : timeInput
+      ? `${dateInput} ${timeInput}`
+      : dateInput;
 
-  if (relative) return relative;
+  const relative = getRelativeTime(relativeInput);
+
+  if (relative && relative !== RELATIVE_TIME_FALLBACK) return relative;
 
   return new Date(timeInput ? `${dateInput} ${timeInput}` : dateInput).toLocaleDateString("en-US", {
     weekday: "short",
