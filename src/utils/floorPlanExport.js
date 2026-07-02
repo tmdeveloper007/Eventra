@@ -17,6 +17,7 @@ export const getCleanExportSvgString = (canvasRef) => {
 };
 
 export const exportAsSVG = (canvasRef, eventId) => {
+  if (typeof document === 'undefined') return; // SSR guard
   try {
     const svgString = getCleanExportSvgString(canvasRef);
     if (!svgString) return;
@@ -35,6 +36,7 @@ export const exportAsSVG = (canvasRef, eventId) => {
 };
 
 export const exportAsPNG = (canvasRef, eventId) => {
+  if (typeof document === 'undefined' || typeof window === 'undefined') return; // SSR guard
   try {
     const svgElement = canvasRef.current;
     if (!svgElement) return;
@@ -114,6 +116,7 @@ export const exportAsPNG = (canvasRef, eventId) => {
 };
 
 export const downloadLayoutJSON = (elements, eventId) => {
+  if (typeof document === 'undefined') return; // SSR guard
   try {
     const jsonBlob = new Blob([JSON.stringify(elements, null, 2)], { type: "application/json" });
     const jsonUrl = URL.createObjectURL(jsonBlob);
@@ -130,6 +133,7 @@ export const downloadLayoutJSON = (elements, eventId) => {
 };
 
 export const importLayoutJSON = (e, onImport) => {
+  if (typeof document === 'undefined') return; // SSR guard
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
