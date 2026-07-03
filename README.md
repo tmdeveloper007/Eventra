@@ -487,7 +487,7 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 - [Frontend Onboarding](docs/frontend-onboarding.md)
 - [Security Migration Notes](docs/SECURITY_MIGRATION.md)
 - [API Documentation Notes](docs/API_DOCUMENTATION.md)
-
+- Client-side authentication audit logging utilities for development and debugging.
 ## Contributing
 
 We welcome contributions from the community! Please follow our guidelines to keep the project maintainable.
@@ -551,6 +551,12 @@ Licensed under Apache 2.0. See [LICENSE](LICENSE).
     <img src="https://contrib.rocks/image?repo=SandeepVashishtha/Eventra&max=1000" alt="Contributors" />
   </a>
 </p>
+
+## Deployment Security
+
+Before deploying Eventra, review the deployment checklist:
+
+- docs/SECURE_DEPLOYMENT_CHECKLIST.md
 
 ### Maintainers
 

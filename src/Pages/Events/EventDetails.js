@@ -1,4 +1,5 @@
 import StatusBadge from "../../components/common/StatusBadge";
+import ReadingProgressBar from "../../components/common/ReadingProgressBar";
 import "./EventDetails.print.css";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -9,7 +10,8 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
-import { isEventBookmarked } from "../../utils/bookmarkUtils";
+import { useAuth } from "../../context/AuthContext";
+import useBookmarks from "../../hooks/useBookmarks";
 import { DRAFT_KEY } from "../../constants/eventDefaults";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { logger } from "../../utils/logger";
@@ -17,9 +19,11 @@ import ReminderControls from "../../components/reminders/ReminderControls";
 import EventRecommendations from "../../components/events/EventRecommendations";
 import EventCancellationModal from "../../components/events/EventCancellationModal";
 import SimilarEvents from "../../components/events/SimilarEvents";
+import LiveQABoard from "../../components/events/LiveQABoard";
+import EventRegistrationProgress from "../../components/events/EventRegistrationProgress";
+import LivePollController from "../../components/events/LivePollController";
 import { EventDetailSkeleton } from "../../components/common/SkeletonLoaders";
 import LazyImage from "../../components/common/LazyImage";
-import { useAuth } from "../../context/AuthContext";
 import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
 import { ROLES } from "../../config/roles";
 import { marked } from "marked";
@@ -29,6 +33,7 @@ import SocialShareButtons from "../../components/common/SocialShareButtons";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
 import { RecentlyViewedTracker } from "../../components/common/RecentlyViewedEvents";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
+import { getLastUpdated } from "../../utils/lastUpdatedUtils";
 import mockEvents from "./eventsMockData.json";
 import CopyButton from '../../components/ui/CopyButton';
 const isRequestCanceled = (error, signal) =>
@@ -41,6 +46,7 @@ const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isBookmarked } = useBookmarks(user?.id || user?.email || "guest");
 
   const isOrganizer = user?.roles?.includes(ROLES.ORGANIZER) || user?.roles?.includes(ROLES.ADMIN);
 
@@ -226,7 +232,7 @@ const EventDetails = () => {
 
   const handleCopy = async () => {
     const link = `
-🎉 Check out this event!
+Check out this event!
 
 Event: ${event.title}
 Date: ${new Date(event.date).toLocaleDateString()}
@@ -253,7 +259,7 @@ ${window.location.href}
       toast.success("Event link copied to clipboard!");
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
-    } catch (_err) {
+    } catch {
       toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
     }
   };
@@ -294,7 +300,7 @@ ${window.location.href}
     );
   }
 
-  const canSetReminder = isEventBookmarked(event.id) || isRegistered(event.id);
+  const canSetReminder = isBookmarked(event.id) || isRegistered(event.id);
   const isRegistrationClosed = isEventRegistrationClosed(event);
   const registrationEnd = event.registrationEnd
   ? new Date(event.registrationEnd)
@@ -308,10 +314,12 @@ const showClosingSoon =
   hoursLeft !== null &&
   hoursLeft > 0 &&
   hoursLeft <= 48;
+const lastUpdated = getLastUpdated(event.updatedAt);  
 
   return (
-    <>
-      <RecentlyViewedTracker event={event} />
+  <>
+    <ReadingProgressBar />
+    <RecentlyViewedTracker event={event} />
       <Helmet>
         <title>{event.title} | Eventra</title>
         <meta property="og:title" content={event.title} />
@@ -331,7 +339,7 @@ const showClosingSoon =
                 {event.type}
               </p>
               <div className="mt-4 flex items-center gap-3">
-                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight break-words" title={event.title}>{event.title}</h1>
+                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight wrap-break-word" title={event.title}>{event.title}</h1>
                 <button
                   onClick={handleCopy}
                   className={`p-2 rounded-full transition-colors ${linkCopied
@@ -354,7 +362,7 @@ const showClosingSoon =
 
   {showClosingSoon && (
     <span className="inline-flex items-center rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-      ⚠ Registration closes {hoursLeft <= 24 ? "today" : `in ${hoursLeft} hours`}
+      Registration closes {hoursLeft <= 24 ? "today" : `in ${hoursLeft} hours`}
     </span>
   )}
 
@@ -400,7 +408,7 @@ const showClosingSoon =
                 className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                 aria-label="Print or save as PDF"
               >
-                {isPrinting ? "Preparing..." : "≡ƒû¿∩╕Å Print / Save as PDF"}
+                {isPrinting ? "Preparing..." : "Print / Save as PDF"}
               </button>
 
               {isOrganizer && (
@@ -418,7 +426,7 @@ const showClosingSoon =
                       className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800 cursor-pointer"
                       aria-label="Export registrant data"
                     >
-                      ≡ƒôÑ Export Registrants
+                      Export Registrants
                     </button>
                     {showExportDropdown && (
                       <>
@@ -450,7 +458,7 @@ const showClosingSoon =
                                   }
                                 }
                                 exportToCSV(allRegistrants, `${event.title}_registrants`);
-                              } catch (_error) {
+                              } catch  {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);
@@ -488,7 +496,7 @@ const showClosingSoon =
                                   }
                                 }
                                 exportToJSON(allRegistrants, `${event.title}_registrants`);
-                              } catch (_error) {
+                              } catch {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);
@@ -572,6 +580,20 @@ const showClosingSoon =
                       </div>
                       </div>
                 </div>
+                {/* Last Updated */}
+<div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
+  <Clock className="h-5 w-5 text-indigo-600" />
+
+  <div>
+    <p className="text-sm text-gray-500 dark:text-gray-400">
+      Last Updated
+    </p>
+
+    <p className="font-semibold">
+      {lastUpdated}
+    </p>
+  </div>
+</div>
 
                 {/* Event Countdown */}
                 <div className="sm:col-span-2">
