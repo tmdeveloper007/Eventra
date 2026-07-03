@@ -231,8 +231,8 @@ export const requestValidation = async (endpoint, options = {}) => {
 
   const timedOut = lastError?.isTimeout || lastError?.name === "AbortError";
   return createValidationResponse(
-    true,
-    "",
+    false,
+    invalidMessage,
     {
       error: lastError,
       isTimeout: timedOut,
