@@ -5,6 +5,7 @@
  */
 
 const prefetchCache = new Map();
+const MAX_PREFETCH_CACHE_SIZE = 50; // Cap cache to prevent unbounded memory growth
 
 const ROUTE_REGISTRY = {
   home: () => import("../Pages/Home/HomePage"),
@@ -38,6 +39,14 @@ export const prefetchRoute = (routeName) => {
     });
 
   prefetchCache.set(routeName, promise);
+
+  // Evict oldest entries once cache exceeds cap.
+  // Drop first (insertion-order oldest) entries until within limit.
+  while (prefetchCache.size > MAX_PREFETCH_CACHE_SIZE) {
+    const oldestKey = prefetchCache.keys().next().value;
+    prefetchCache.delete(oldestKey);
+  }
+
   return promise;
 };
 
