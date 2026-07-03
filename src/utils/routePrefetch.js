@@ -5,6 +5,7 @@
  */
 
 const prefetchCache = new Map();
+const MAX_CACHE_SIZE = 50;
 
 const ROUTE_REGISTRY = {
   home: () => import("../Pages/Home/HomePage"),
@@ -26,6 +27,11 @@ export const prefetchRoute = (routeName) => {
 
   if (prefetchCache.has(routeName)) {
     return prefetchCache.get(routeName);
+  }
+
+  if (prefetchCache.size >= MAX_CACHE_SIZE) {
+    const oldestKey = prefetchCache.keys().next().value;
+    if (oldestKey) prefetchCache.delete(oldestKey);
   }
 
   const promise = importFn()
