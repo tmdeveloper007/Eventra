@@ -1,6 +1,7 @@
 import crypto from "crypto";
 
 const usedNonces = new Map();
+const MAX_NONCES = 10000;
 
 const MAX_REQUEST_AGE_MS = 5 * 60 * 1000;
 
@@ -52,6 +53,10 @@ export function validateSignature(
     };
   }
 
+  if (usedNonces.size >= MAX_NONCES) {
+    const oldestNonce = usedNonces.keys().next().value;
+    usedNonces.delete(oldestNonce);
+  }
   usedNonces.set(nonce, now);
 
   return {
@@ -74,4 +79,9 @@ const cleanupInterval = setInterval(() => {
 
 if (cleanupInterval && typeof cleanupInterval.unref === "function") {
   cleanupInterval.unref();
+}
+
+export function stopCleanupInterval() {
+  clearInterval(cleanupInterval);
+  usedNonces.clear();
 }
