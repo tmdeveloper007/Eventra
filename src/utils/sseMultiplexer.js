@@ -77,8 +77,14 @@ class SseMultiplexer {
     };
 
     if (typeof window !== "undefined") {
-      this.channel = new BroadcastChannel(MULTIPLEX_CHANNEL_NAME);
-      this.channel.onmessage = (e) => this.handleBroadcastMessage(e.data);
+      // BroadcastChannel is not available in Safari < 15.4, IE, and older Edge.
+      // Guard here to prevent ReferenceError and fall through to localStorage fallback.
+      if (typeof BroadcastChannel !== "undefined") {
+        this.channel = new BroadcastChannel(MULTIPLEX_CHANNEL_NAME);
+        this.channel.onmessage = (e) => this.handleBroadcastMessage(e.data);
+      } else {
+        logger.warn("[SSE Multiplexer] BroadcastChannel unavailable — falling back to localStorage election");
+      }
 
       this.setupLeaderElection();
 
