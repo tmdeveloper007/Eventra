@@ -112,6 +112,8 @@ export function totalLeaderboardPages(totalItems, perPage) {
 export function buildRanksMap(contributors) {
   const map = {};
   contributors.forEach((c, i) => {
+    // Skip entries without a valid username to prevent null/undefined map key collisions.
+    if (!c?.username) return;
     map[c.username] = i + 1;
   });
   return map;
