@@ -72,9 +72,10 @@ export function filterContributors(contributors, search, activeCategory) {
   }
 
   return contributors.filter((c) => {
+    // Guard against null/undefined username — calling toLowerCase() on null throws TypeError
     const matchSearch =
       !q ||
-      c.username.toLowerCase().includes(q) ||
+      (c.username != null && c.username.toLowerCase().includes(q)) ||
       (c.name && c.name.toLowerCase().includes(q));
 
     if (!matchSearch) return false;
@@ -94,7 +95,11 @@ export function filterContributors(contributors, search, activeCategory) {
 export function sortContributors(contributors, sortBy) {
   return [...contributors].sort((a, b) => {
     if (sortBy === "prs")      return b.prs - a.prs;
-    if (sortBy === "username") return a.username.localeCompare(b.username);
+    if (sortBy === "username") {
+      const aName = a.username ?? "";
+      const bName = b.username ?? "";
+      return aName.localeCompare(bName);
+    }
     return b.points - a.points;
   });
 }
@@ -112,7 +117,9 @@ export function totalLeaderboardPages(totalItems, perPage) {
 export function buildRanksMap(contributors) {
   const map = {};
   contributors.forEach((c, i) => {
-    map[c.username] = i + 1;
+    if (c.username != null) {
+      map[c.username] = i + 1;
+    }
   });
   return map;
 }
