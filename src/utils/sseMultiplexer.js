@@ -152,7 +152,12 @@ class SseMultiplexer {
   }
 
   claimLocalStorageLeadership(heartbeatTimeout = 7000) {
-    if (this.localStorageClaimTimeout || this.isLeader) return;
+    if (this.isLeader) return;
+    // Clear any pending claim timeout before setting a new one to prevent timer accumulation.
+    if (this.localStorageClaimTimeout) {
+      clearTimeout(this.localStorageClaimTimeout);
+      this.localStorageClaimTimeout = null;
+    }
 
     const token = `${this.tabId}:${Date.now()}:${Math.random().toString(36).substring(2, 9)}`;
     const timestamp = Date.now();
