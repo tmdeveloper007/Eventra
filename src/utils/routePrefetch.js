@@ -1,10 +1,11 @@
 /**
  * Route-Based Component Prefetching Utility
- * 
+ *
  * Caches and schedules dynamic imports for key lazy-loaded pages.
  */
 
 const prefetchCache = new Map();
+const MAX_PREFETCH_CACHE_SIZE = 10;
 
 const ROUTE_REGISTRY = {
   home: () => import("../Pages/Home/HomePage"),
@@ -26,6 +27,12 @@ export const prefetchRoute = (routeName) => {
 
   if (prefetchCache.has(routeName)) {
     return prefetchCache.get(routeName);
+  }
+
+  // Evict oldest entry when cache reaches capacity to prevent unbounded growth.
+  if (prefetchCache.size >= MAX_PREFETCH_CACHE_SIZE) {
+    const oldestKey = prefetchCache.keys().next().value;
+    prefetchCache.delete(oldestKey);
   }
 
   const promise = importFn()
