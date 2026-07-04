@@ -44,6 +44,8 @@ const sanitizeTemplateData = (formData) => {
  * @returns {Array} Array of template objects
  */
 export const getTemplates = () => {
+  // SSR guard — localStorage is not available during server-side rendering
+  if (typeof window === "undefined" || typeof localStorage === "undefined") return [];
   try {
     const stored = localStorage.getItem(TEMPLATES_KEY);
     if (!stored) return [];
