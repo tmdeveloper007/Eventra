@@ -32,6 +32,7 @@ const ALLOWED_KEYS = [
 ];
 
 const isSensitiveKey = (key) => {
+  if (key == null || typeof key !== 'string') return false;
   const lowerKey = key.toLowerCase();
   return BLOCKED_KEYS.some((blocked) => lowerKey.includes(blocked.toLowerCase()));
 };
@@ -50,6 +51,8 @@ const sanitizeValue = (value) => {
 };
 
 export const safeSet = (key, value, useSession = false) => {
+  // SSR guard — storage APIs are not available during server-side rendering
+  if (typeof window === "undefined") return false;
   try {
     if (isSensitiveKey(key)) {
       console.warn(`[SecureStorage] Blocked storing sensitive key: "${key}"`);
@@ -64,6 +67,8 @@ export const safeSet = (key, value, useSession = false) => {
 };
 
 export const safeGet = (key, useSession = false) => {
+  // SSR guard
+  if (typeof window === "undefined") return null;
   try {
     const storage = useSession ? sessionStorage : localStorage;
     const value = storage.getItem(key);
@@ -79,6 +84,8 @@ export const safeGet = (key, useSession = false) => {
 };
 
 export const safeRemove = (key, useSession = false) => {
+  // SSR guard
+  if (typeof window === "undefined") return false;
   try {
     const storage = useSession ? sessionStorage : localStorage;
     storage.removeItem(key);
@@ -89,6 +96,8 @@ export const safeRemove = (key, useSession = false) => {
 };
 
 export const auditStorage = () => {
+  // SSR guard
+  if (typeof window === "undefined") return [];
   const issues = [];
   try {
     // Check localStorage
@@ -116,6 +125,8 @@ export const auditStorage = () => {
 };
 
 export const cleanSensitiveData = () => {
+  // SSR guard
+  if (typeof window === "undefined") return false;
   try {
     [...Object.keys(localStorage)].forEach((key) => {
       if (isSensitiveKey(key)) {
