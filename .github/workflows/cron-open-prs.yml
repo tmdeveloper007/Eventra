@@ -8,111 +8,183 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Create cross-fork PRs
+      - name: Open PR 1 - safeJsonParseFromStorage SSR guard
         run: |
-          echo "Opening PRs..."
-          
-          # PR 1: safeJsonParseFromStorage SSR guard (Issue #84)
-          gh pr create \
-            --repo SandeepVashishtha/Eventra \
-            --base master \
-            --head tmdeveloper007:fix/safeJsonParseFromStorage-SSR-84 \
-            --title "fix(utils): add SSR guard to safeJsonParseFromStorage (Closes #84)" \
-            --body "## Summary
+          echo "Creating PR for safeJsonParseFromStorage..."
+          node -e "
+          const https = require('https');
+          const data = JSON.stringify({
+            title: 'fix(utils): add SSR guard to safeJsonParseFromStorage (Closes #84)',
+            head: 'tmdeveloper007:fix/safeJsonParseFromStorage-SSR-84',
+            base: 'master',
+            body: '## Summary\n\nAdds an SSR guard (`typeof window === \"undefined\"`) at the start of `safeJsonParseFromStorage()` in `src/utils/safeJsonParse.js`. The function accessed `localStorage` directly, causing a runtime crash in Node.js/SSR environments.\n\n## Changes\n\n- src/utils/safeJsonParse.js: Added SSR guard\n\n## Impact\n\n- Fixes runtime crash in SSR/Node.js environments\n- No behavioral change for browser clients\n\nCloses #84'
+          });
+          const options = {
+            hostname: 'api.github.com',
+            path: '/repos/SandeepVashishtha/Eventra/pulls',
+            method: 'POST',
+            headers: {
+              'Authorization': 'token ' + process.env.GITHUB_TOKEN,
+              'Content-Type': 'application/json',
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          };
+          const req = https.request(options, (res) => {
+            let body = '';
+            res.on('data', chunk => body += chunk);
+            res.on('end', () => {
+              const result = JSON.parse(body);
+              if (result.number) {
+                console.log('PR #' + result.number + ' created: ' + result.html_url);
+              } else {
+                console.log('Error: ' + JSON.stringify(result));
+              }
+            });
+          });
+          req.write(data);
+          req.end();
+          " || echo "PR creation via API failed"
 
-Adds an SSR guard (typeof window === 'undefined') at the start of safeJsonParseFromStorage() in src/utils/safeJsonParse.js. The function accessed localStorage directly, causing a runtime crash in Node.js/SSR environments.
+      - name: Open PR 2 - eventTemplateUtils SSR guards
+        run: |
+          node -e "
+          const https = require('https');
+          const data = JSON.stringify({
+            title: 'fix(utils): add SSR guards to eventTemplateUtils localStorage access (Closes #85)',
+            head: 'tmdeveloper007:fix/eventTemplateUtils-SSR-85',
+            base: 'master',
+            body: '## Summary\n\nAdds SSR guards to all functions in src/utils/eventTemplateUtils.js that access localStorage.\n\n## Changes\n\n- Added isStorageAvailable() helper\n- Added guards to getTemplates(), saveTemplate(), deleteTemplate(), clearAllTemplates()\n\n## Impact\n\n- Fixes runtime crash in SSR/Node.js environments\n\nCloses #85'
+          });
+          const options = {
+            hostname: 'api.github.com',
+            path: '/repos/SandeepVashishtha/Eventra/pulls',
+            method: 'POST',
+            headers: {
+              'Authorization': 'token ' + process.env.GITHUB_TOKEN,
+              'Content-Type': 'application/json',
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          };
+          const req = https.request(options, (res) => {
+            let body = '';
+            res.on('data', chunk => body += chunk);
+            res.on('end', () => {
+              const result = JSON.parse(body);
+              if (result.number) {
+                console.log('PR #' + result.number + ' created: ' + result.html_url);
+              } else {
+                console.log('Error: ' + JSON.stringify(result));
+              }
+            });
+          });
+          req.write(data);
+          req.end();
+          " || echo "PR creation via API failed"
 
-## Changes
+      - name: Open PR 3 - securityHeadersDiagnostics SSR guard
+        run: |
+          node -e "
+          const https = require('https');
+          const data = JSON.stringify({
+            title: 'fix(utils): add SSR guard to securityHeadersDiagnostics document access (Closes #88)',
+            head: 'tmdeveloper007:fix/securityHeadersDiagnostics-SSR-88',
+            base: 'master',
+            body: '## Summary\n\nAdds SSR guard to getSecurityHeadersDiagnostics() in src/utils/securityHeadersDiagnostics.js.\n\n## Changes\n\n- Returns graceful SSR fallback instead of crashing on document.querySelector\n\n## Impact\n\n- Fixes runtime crash in SSR/Node.js environments\n\nCloses #88'
+          });
+          const options = {
+            hostname: 'api.github.com',
+            path: '/repos/SandeepVashishtha/Eventra/pulls',
+            method: 'POST',
+            headers: {
+              'Authorization': 'token ' + process.env.GITHUB_TOKEN,
+              'Content-Type': 'application/json',
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          };
+          const req = https.request(options, (res) => {
+            let body = '';
+            res.on('data', chunk => body += chunk);
+            res.on('end', () => {
+              const result = JSON.parse(body);
+              if (result.number) {
+                console.log('PR #' + result.number + ' created: ' + result.html_url);
+              } else {
+                console.log('Error: ' + JSON.stringify(result));
+              }
+            });
+          });
+          req.write(data);
+          req.end();
+          " || echo "PR creation via API failed"
 
-- src/utils/safeJsonParse.js: Added SSR guard
+      - name: Open PR 4 - sessionManager SSR guards
+        run: |
+          node -e "
+          const https = require('https');
+          const data = JSON.stringify({
+            title: 'fix(utils): add SSR guards to sessionManager localStorage/sessionStorage access (Closes #87)',
+            head: 'tmdeveloper007:fix/sessionManager-SSR-87',
+            base: 'master',
+            body: '## Summary\n\nAdds SSR guards to clearAuthStorage() and isSessionValid() in src/utils/sessionManager.js.\n\n## Changes\n\n- Added typeof window guard to both functions\n\n## Impact\n\n- Fixes runtime crash in SSR/Node.js environments\n\nCloses #87'
+          });
+          const options = {
+            hostname: 'api.github.com',
+            path: '/repos/SandeepVashishtha/Eventra/pulls',
+            method: 'POST',
+            headers: {
+              'Authorization': 'token ' + process.env.GITHUB_TOKEN,
+              'Content-Type': 'application/json',
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          };
+          const req = https.request(options, (res) => {
+            let body = '';
+            res.on('data', chunk => body += chunk);
+            res.on('end', () => {
+              const result = JSON.parse(body);
+              if (result.number) {
+                console.log('PR #' + result.number + ' created: ' + result.html_url);
+              } else {
+                console.log('Error: ' + JSON.stringify(result));
+              }
+            });
+          });
+          req.write(data);
+          req.end();
+          " || echo "PR creation via API failed"
 
-## Impact
-
-- Fixes runtime crash in SSR/Node.js environments
-- No behavioral change for browser clients
-
-Closes #84"
-          
-          # PR 2: eventTemplateUtils SSR guards (Issue #85)
-          gh pr create \
-            --repo SandeepVashishtha/Eventra \
-            --base master \
-            --head tmdeveloper007:fix/eventTemplateUtils-SSR-85 \
-            --title "fix(utils): add SSR guards to eventTemplateUtils localStorage access (Closes #85)" \
-            --body "## Summary
-
-Adds SSR guards to all functions in src/utils/eventTemplateUtils.js that access localStorage.
-
-## Changes
-
-- Added isStorageAvailable() helper
-- Added guards to getTemplates(), saveTemplate(), deleteTemplate(), clearAllTemplates()
-
-## Impact
-
-- Fixes runtime crash in SSR/Node.js environments
-- No behavioral change for browser clients
-
-Closes #85"
-          
-          # PR 3: securityHeadersDiagnostics SSR guard (Issue #88)
-          gh pr create \
-            --repo SandeepVashishtha/Eventra \
-            --base master \
-            --head tmdeveloper007:fix/securityHeadersDiagnostics-SSR-88 \
-            --title "fix(utils): add SSR guard to securityHeadersDiagnostics document access (Closes #88)" \
-            --body "## Summary
-
-Adds SSR guard to getSecurityHeadersDiagnostics() in src/utils/securityHeadersDiagnostics.js.
-
-## Changes
-
-- Returns graceful SSR fallback instead of crashing on document.querySelector
-
-## Impact
-
-- Fixes runtime crash in SSR/Node.js environments
-
-Closes #88"
-          
-          # PR 4: sessionManager SSR guards (Issue #87)
-          gh pr create \
-            --repo SandeepVashishtha/Eventra \
-            --base master \
-            --head tmdeveloper007:fix/sessionManager-SSR-87 \
-            --title "fix(utils): add SSR guards to sessionManager localStorage/sessionStorage access (Closes #87)" \
-            --body "## Summary
-
-Adds SSR guards to clearAuthStorage() and isSessionValid() in src/utils/sessionManager.js.
-
-## Changes
-
-- Added typeof window guard to both functions
-
-## Impact
-
-- Fixes runtime crash in SSR/Node.js environments
-
-Closes #87"
-          
-          # PR 5: rateLimitUtils SSR guards (Issue #86)
-          gh pr create \
-            --repo SandeepVashishtha/Eventra \
-            --base master \
-            --head tmdeveloper007:fix/rateLimitUtils-SSR-86 \
-            --title "fix(utils): add SSR guards to rateLimitUtils sessionStorage access (Closes #86)" \
-            --body "## Summary
-
-Adds SSR guards to readPersistedRateLimit(), persistRateLimit(), and clearPersistedRateLimit() in src/utils/rateLimitUtils.js.
-
-## Changes
-
-- Added isSessionStorageAvailable() helper
-- Added guards to all sessionStorage-accessing functions
-
-## Impact
-
-- Fixes runtime crash in SSR/Node.js environments
-
-Closes #86"
+      - name: Open PR 5 - rateLimitUtils SSR guards
+        run: |
+          node -e "
+          const https = require('https');
+          const data = JSON.stringify({
+            title: 'fix(utils): add SSR guards to rateLimitUtils sessionStorage access (Closes #86)',
+            head: 'tmdeveloper007:fix/rateLimitUtils-SSR-86',
+            base: 'master',
+            body: '## Summary\n\nAdds SSR guards to readPersistedRateLimit(), persistRateLimit(), and clearPersistedRateLimit() in src/utils/rateLimitUtils.js.\n\n## Changes\n\n- Added isSessionStorageAvailable() helper\n- Added guards to all sessionStorage-accessing functions\n\n## Impact\n\n- Fixes runtime crash in SSR/Node.js environments\n\nCloses #86'
+          });
+          const options = {
+            hostname: 'api.github.com',
+            path: '/repos/SandeepVashishtha/Eventra/pulls',
+            method: 'POST',
+            headers: {
+              'Authorization': 'token ' + process.env.GITHUB_TOKEN,
+              'Content-Type': 'application/json',
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          };
+          const req = https.request(options, (res) => {
+            let body = '';
+            res.on('data', chunk => body += chunk);
+            res.on('end', () => {
+              const result = JSON.parse(body);
+              if (result.number) {
+                console.log('PR #' + result.number + ' created: ' + result.html_url);
+              } else {
+                console.log('Error: ' + JSON.stringify(result));
+              }
+            });
+          });
+          req.write(data);
+          req.end();
+          " || echo "PR creation via API failed"
