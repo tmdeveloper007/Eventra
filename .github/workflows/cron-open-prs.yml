@@ -1,0 +1,118 @@
+name: Open Cross-Fork PRs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  open-prs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create cross-fork PRs
+        run: |
+          echo "Opening PRs..."
+          
+          # PR 1: safeJsonParseFromStorage SSR guard (Issue #84)
+          gh pr create \
+            --repo SandeepVashishtha/Eventra \
+            --base master \
+            --head tmdeveloper007:fix/safeJsonParseFromStorage-SSR-84 \
+            --title "fix(utils): add SSR guard to safeJsonParseFromStorage (Closes #84)" \
+            --body "## Summary
+
+Adds an SSR guard (typeof window === 'undefined') at the start of safeJsonParseFromStorage() in src/utils/safeJsonParse.js. The function accessed localStorage directly, causing a runtime crash in Node.js/SSR environments.
+
+## Changes
+
+- src/utils/safeJsonParse.js: Added SSR guard
+
+## Impact
+
+- Fixes runtime crash in SSR/Node.js environments
+- No behavioral change for browser clients
+
+Closes #84"
+          
+          # PR 2: eventTemplateUtils SSR guards (Issue #85)
+          gh pr create \
+            --repo SandeepVashishtha/Eventra \
+            --base master \
+            --head tmdeveloper007:fix/eventTemplateUtils-SSR-85 \
+            --title "fix(utils): add SSR guards to eventTemplateUtils localStorage access (Closes #85)" \
+            --body "## Summary
+
+Adds SSR guards to all functions in src/utils/eventTemplateUtils.js that access localStorage.
+
+## Changes
+
+- Added isStorageAvailable() helper
+- Added guards to getTemplates(), saveTemplate(), deleteTemplate(), clearAllTemplates()
+
+## Impact
+
+- Fixes runtime crash in SSR/Node.js environments
+- No behavioral change for browser clients
+
+Closes #85"
+          
+          # PR 3: securityHeadersDiagnostics SSR guard (Issue #88)
+          gh pr create \
+            --repo SandeepVashishtha/Eventra \
+            --base master \
+            --head tmdeveloper007:fix/securityHeadersDiagnostics-SSR-88 \
+            --title "fix(utils): add SSR guard to securityHeadersDiagnostics document access (Closes #88)" \
+            --body "## Summary
+
+Adds SSR guard to getSecurityHeadersDiagnostics() in src/utils/securityHeadersDiagnostics.js.
+
+## Changes
+
+- Returns graceful SSR fallback instead of crashing on document.querySelector
+
+## Impact
+
+- Fixes runtime crash in SSR/Node.js environments
+
+Closes #88"
+          
+          # PR 4: sessionManager SSR guards (Issue #87)
+          gh pr create \
+            --repo SandeepVashishtha/Eventra \
+            --base master \
+            --head tmdeveloper007:fix/sessionManager-SSR-87 \
+            --title "fix(utils): add SSR guards to sessionManager localStorage/sessionStorage access (Closes #87)" \
+            --body "## Summary
+
+Adds SSR guards to clearAuthStorage() and isSessionValid() in src/utils/sessionManager.js.
+
+## Changes
+
+- Added typeof window guard to both functions
+
+## Impact
+
+- Fixes runtime crash in SSR/Node.js environments
+
+Closes #87"
+          
+          # PR 5: rateLimitUtils SSR guards (Issue #86)
+          gh pr create \
+            --repo SandeepVashishtha/Eventra \
+            --base master \
+            --head tmdeveloper007:fix/rateLimitUtils-SSR-86 \
+            --title "fix(utils): add SSR guards to rateLimitUtils sessionStorage access (Closes #86)" \
+            --body "## Summary
+
+Adds SSR guards to readPersistedRateLimit(), persistRateLimit(), and clearPersistedRateLimit() in src/utils/rateLimitUtils.js.
+
+## Changes
+
+- Added isSessionStorageAvailable() helper
+- Added guards to all sessionStorage-accessing functions
+
+## Impact
+
+- Fixes runtime crash in SSR/Node.js environments
+
+Closes #86"
