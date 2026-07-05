@@ -1,0 +1,91 @@
+name: Open Upstream PRs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  open-prs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Open PRs via GitHub API
+        run: |
+          set -e
+          
+          # PR 1: safeJsonParseFromStorage SSR guard
+          echo "Creating PR 1..."
+          curl -s -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: tmdeveloper007" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d '{
+              "title": "fix(utils): add SSR guard to safeJsonParseFromStorage (Closes #84)",
+              "body": "## Summary\n\nAdds an SSR guard at the start of safeJsonParseFromStorage() in src/utils/safeJsonParse.js.\n\n## Changes\n\n- src/utils/safeJsonParse.js: Added SSR guard\n\n## Impact\n\n- Fixes runtime crash in SSR/Node.js environments\n\nCloses #84",
+              "head": "tmdeveloper007:fix/safeJsonParseFromStorage-SSR-84",
+              "base": "master"
+            }' \
+            "https://api.github.com/repos/SandeepVashishtha/Eventra/pulls" | tee /tmp/pr1.json
+          
+          # PR 2: eventTemplateUtils SSR guards
+          echo "Creating PR 2..."
+          curl -s -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: tmdeveloper007" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d '{
+              "title": "fix(utils): add SSR guards to eventTemplateUtils localStorage access (Closes #85)",
+              "body": "## Summary\n\nAdds SSR guards to all functions in src/utils/eventTemplateUtils.js that access localStorage.\n\n## Changes\n\n- Added isStorageAvailable() helper and guards to getTemplates(), saveTemplate(), deleteTemplate(), clearAllTemplates()\n\n## Impact\n\n- Fixes runtime crash in SSR/Node.js environments\n\nCloses #85",
+              "head": "tmdeveloper007:fix/eventTemplateUtils-SSR-85",
+              "base": "master"
+            }' \
+            "https://api.github.com/repos/SandeepVashishtha/Eventra/pulls" | tee /tmp/pr2.json
+          
+          # PR 3: securityHeadersDiagnostics SSR guard
+          echo "Creating PR 3..."
+          curl -s -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: tmdeveloper007" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d '{
+              "title": "fix(utils): add SSR guard to securityHeadersDiagnostics document access (Closes #88)",
+              "body": "## Summary\n\nAdds SSR guard to getSecurityHeadersDiagnostics() in src/utils/securityHeadersDiagnostics.js.\n\n## Changes\n\n- Returns graceful SSR fallback instead of crashing on document.querySelector\n\n## Impact\n\n- Fixes runtime crash in SSR/Node.js environments\n\nCloses #88",
+              "head": "tmdeveloper007:fix/securityHeadersDiagnostics-SSR-88",
+              "base": "master"
+            }' \
+            "https://api.github.com/repos/SandeepVashishtha/Eventra/pulls" | tee /tmp/pr3.json
+          
+          # PR 4: sessionManager SSR guards
+          echo "Creating PR 4..."
+          curl -s -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: tmdeveloper007" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d '{
+              "title": "fix(utils): add SSR guards to sessionManager localStorage/sessionStorage access (Closes #87)",
+              "body": "## Summary\n\nAdds SSR guards to clearAuthStorage() and isSessionValid() in src/utils/sessionManager.js.\n\n## Changes\n\n- Added typeof window guard to both functions\n\n## Impact\n\n- Fixes runtime crash in SSR/Node.js environments\n\nCloses #87",
+              "head": "tmdeveloper007:fix/sessionManager-SSR-87",
+              "base": "master"
+            }' \
+            "https://api.github.com/repos/SandeepVashishtha/Eventra/pulls" | tee /tmp/pr4.json
+          
+          # PR 5: rateLimitUtils SSR guards
+          echo "Creating PR 5..."
+          curl -s -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: tmdeveloper007" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d '{
+              "title": "fix(utils): add SSR guards to rateLimitUtils sessionStorage access (Closes #86)",
+              "body": "## Summary\n\nAdds SSR guards to readPersistedRateLimit(), persistRateLimit(), and clearPersistedRateLimit() in src/utils/rateLimitUtils.js.\n\n## Changes\n\n- Added isSessionStorageAvailable() helper and guards to all sessionStorage-accessing functions\n\n## Impact\n\n- Fixes runtime crash in SSR/Node.js environments\n\nCloses #86",
+              "head": "tmdeveloper007:fix/rateLimitUtils-SSR-86",
+              "base": "master"
+            }' \
+            "https://api.github.com/repos/SandeepVashishtha/Eventra/pulls" | tee /tmp/pr5.json
+          
+          echo "Done!"
