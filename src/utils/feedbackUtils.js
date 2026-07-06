@@ -12,7 +12,8 @@ const FEEDBACK_STORAGE_KEY = 'eventra_feedback';
 
 export const fetchEventFeedback = async (eventId) => {
   const response = await apiUtils.get(API_ENDPOINTS.FEEDBACK.BY_EVENT(eventId));
-  return response.json();
+  const data = await response.json();
+  return data;
 };
 
 export const submitEventFeedback = async ({ eventId, rating, comment, tags = [] }) => {
@@ -22,7 +23,8 @@ export const submitEventFeedback = async ({ eventId, rating, comment, tags = [] 
     comment,
     tags,
   });
-  return response.json();
+  const data = await response.json();
+  return data;
 };
 
 /**
