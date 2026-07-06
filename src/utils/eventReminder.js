@@ -154,6 +154,11 @@ const validateAndVerifyPermissions = (title, delay) => {
     return false;
   }
 
+  if (delay > MAX_TIMEOUT_DELAY) {
+    console.error(`scheduleReminder: Delay exceeds maximum allowed value (${MAX_TIMEOUT_DELAY} ms / ~24.8 days). Please reschedule with a shorter delay.`);
+    return false;
+  }
+
   if (!isNotificationSupported()) {
     console.warn("Cannot schedule reminder: Notifications not supported.");
     return false;
