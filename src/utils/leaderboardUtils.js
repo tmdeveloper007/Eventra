@@ -74,7 +74,7 @@ export function filterContributors(contributors, search, activeCategory) {
   return contributors.filter((c) => {
     const matchSearch =
       !q ||
-      c.username.toLowerCase().includes(q) ||
+      (c.username && c.username.toLowerCase().includes(q)) ||
       (c.name && c.name.toLowerCase().includes(q));
 
     if (!matchSearch) return false;
