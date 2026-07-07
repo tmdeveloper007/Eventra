@@ -55,6 +55,10 @@ export async function validateSignature(
 ) {
   const now = Date.now();
 
+  // Lazily prune expired nonces on every call — keeps the Map bounded
+  // without a persistent timer that would leak in long-running SPAs.
+  pruneExpiredNonces();
+
   if (!timestamp || !nonce || !signature) {
     return {
       valid: false,
@@ -97,16 +101,18 @@ export async function validateSignature(
   };
 }
 
-const cleanupInterval = setInterval(() => {
+/**
+ * Prune expired nonces from the usedNonces Map lazily.
+ * Called once per validateSignature invocation to keep the Map bounded
+ * without needing a persistent timer (which would leak in browser SPAs).
+ */
+const pruneExpiredNonces = () => {
   const now = Date.now();
-
   for (const [nonce, timestamp] of usedNonces) {
     if (now - timestamp > MAX_REQUEST_AGE_MS) {
       usedNonces.delete(nonce);
     }
   }
-}, 60000);
+};
 
-if (cleanupInterval && typeof cleanupInterval.unref === "function") {
-  cleanupInterval.unref();
-}
+
