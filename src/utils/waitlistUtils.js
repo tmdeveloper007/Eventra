@@ -65,6 +65,10 @@ export const addLocalNotification = async (title, message) => {
 // Retrieve all waitlist entries across all events and users
 export const getGlobalWaitlist = () => {
   try {
+    // SSR guard: localStorage is undefined in Node.js / SSR environments
+    if (typeof window === "undefined" || typeof localStorage === "undefined") {
+      return [];
+    }
     const raw = localStorage.getItem(GLOBAL_WAITLIST_KEY);
     return raw ? safeJsonParse(raw, []) : [];
   } catch (err) {
@@ -78,6 +82,10 @@ export const getGlobalWaitlist = () => {
 // Persist waitlist entries globally (offline cache only)
 export const saveGlobalWaitlist = (records) => {
   try {
+    // SSR guard: localStorage is undefined in Node.js / SSR environments
+    if (typeof window === "undefined" || typeof localStorage === "undefined") {
+      return;
+    }
     localStorage.setItem(GLOBAL_WAITLIST_KEY, JSON.stringify(records));
   } catch (error) {
     logger.error("[WaitlistUtils] Failed to save global waitlist:", error);
