@@ -127,7 +127,7 @@ export const normalizeSuggestionHistory = (history = {}) => {
 };
 
 export const readSuggestionHistory = (
-  storage = globalThis.localStorage,
+  storage = typeof window !== "undefined" ? globalThis.localStorage : null,
   key = FILTER_SUGGESTIONS_STORAGE_KEY,
 ) => {
   if (!storage?.getItem) return createEmptyHistory();
@@ -144,7 +144,7 @@ export const readSuggestionHistory = (
 
 export const writeSuggestionHistory = (
   history,
-  storage = globalThis.localStorage,
+  storage = typeof window !== "undefined" ? globalThis.localStorage : null,
   key = FILTER_SUGGESTIONS_STORAGE_KEY,
 ) => {
   const normalized = normalizeSuggestionHistory(history);
