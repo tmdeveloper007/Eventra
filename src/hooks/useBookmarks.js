@@ -164,6 +164,7 @@ const useBookmarks = (userId = "guest") => {
   bookmarksRef.current = bookmarks;
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const handleStorageEvent = (e) => {
       if (e.key !== storageKeyRef.current) return;
       const fresh = e.newValue ? (() => {
