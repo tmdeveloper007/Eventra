@@ -26,6 +26,7 @@ const CACHE_KEYS_PREFIX = [
 ];
 
 export const clearAuthStorage = () => {
+  if (typeof window === "undefined") return false;
   try {
     // Clear known session keys
     SESSION_KEYS.forEach((key) => {
@@ -85,6 +86,7 @@ export const invalidateSession = async () => {
 };
 
 export const isSessionValid = () => {
+  if (typeof window === "undefined") return false;
   try {
     const token =
       localStorage.getItem("token") ||
