@@ -123,7 +123,7 @@ export const parseEventToUTC = (dateStr, timeStr, timezone) => {
 
     return utcCandidate;
   } catch {
-    return new Date(year, month - 1, day, hours, minutes).getTime();
+    return Date.UTC(year, month - 1, day, hours, minutes, 0, 0);
   }
 };
 
