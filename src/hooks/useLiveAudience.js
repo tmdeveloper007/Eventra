@@ -114,7 +114,7 @@ export default function useLiveAudience(eventId) {
     let isMounted = true;
     fetchLiveAudienceInitial(eventId, loadInitialData, setLoading, setError, () => isMounted);
     return () => { isMounted = false; };
-  }, [eventId, eventData, loadInitialData]);
+  }, [eventId, loadInitialData]);
 
   const questions = useMemo(
     () => sortQuestionsList(eventData?.questions),
