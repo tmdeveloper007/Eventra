@@ -70,6 +70,9 @@ export const exportAttendeesToCSV = (attendees, filename = "event-attendees.csv"
     return;
   }
 
+  // SSR guard: window and document are only available in browser environments
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
   // Sanitize the filename: strip OS reserved characters and path separators.
   // Fall back to a safe default if sanitization produces an empty string.
   const safeFilename = filename.replace(/[/\\:*?"<>|]/g, "_").trim() || "export.csv";
@@ -131,6 +134,9 @@ export const exportSurveyToCSV = (questions, responses, surveyTitle = "Survey") 
     return;
   }
 
+  // SSR guard: window and document are only available in browser environments
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
   // Sanitize the filename to strip OS path separators and reserved chars
   const sanitizedTitle = surveyTitle.replace(/[/\\:*?"<>|]/g, "_").trim() || "Survey";
   const dateStr = new Date().toISOString().split("T")[0];
@@ -179,6 +185,9 @@ export const exportEventsToCSV = (events, filename = "eventra-events.csv") => {
   if (!events || events.length === 0) {
     return;
   }
+
+  // SSR guard: window and document are only available in browser environments
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
   // Ensure the filename ends with .csv, and sanitize path/special characters
   let safeFilename = filename.replace(/[/\\:*?"<>|]/g, "_").trim();
