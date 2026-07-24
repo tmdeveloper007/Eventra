@@ -1,12 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 const STORAGE_KEY = "eventra_notifications";
 const FLUSH_INTERVAL_MS = 300;
 
-let queue = [];
-let flushTimeout = null;
-
 export function useNotifications() {
+  // Instance-level state via useRef — each component gets its own isolated queue
+  // and flush timer. Previously these were module-level variables shared across
+  // all hook instances, causing cross-component notification corruption.
+  const queueRef = useRef([]);
+  const flushTimeoutRef = useRef(null);
+
   const [notifications, setNotifications] = useState(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -26,6 +29,7 @@ export function useNotifications() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") return; // SSR guard
     const handleUpdate = () => {
       load();
     };
@@ -42,20 +46,20 @@ export function useNotifications() {
       createdAt: new Date().toISOString(),
       ...notif,
     };
-    queue.push(newNotif);
+    queueRef.current.push(newNotif);
 
-    if (flushTimeout) {
-      clearTimeout(flushTimeout);
+    if (flushTimeoutRef.current) {
+      clearTimeout(flushTimeoutRef.current);
     }
-    flushTimeout = setTimeout(() => {
+    flushTimeoutRef.current = setTimeout(() => {
       try {
         const raw = window.localStorage.getItem(STORAGE_KEY);
         const existing = raw ? JSON.parse(raw) : [];
-        const updated = [...queue, ...existing];
+        const updated = [...queueRef.current, ...existing];
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       } catch {}
-      queue = [];
-      flushTimeout = null;
+      queueRef.current = [];
+      flushTimeoutRef.current = null;
       window.dispatchEvent(new CustomEvent("eventra-notifications-updated"));
     }, FLUSH_INTERVAL_MS);
   }, []);
