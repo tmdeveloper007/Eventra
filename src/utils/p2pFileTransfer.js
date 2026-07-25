@@ -235,6 +235,7 @@ const webrtcAvailable = isBrowser &&
 // Establish P2P Broadcast Channel for multi-tab signaling
 const getSignalingChannel = () => {
   if (!signalingChannel && isBrowser) {
+    if (typeof BroadcastChannel === "undefined") return null; // SSR guard
     signalingChannel = new BroadcastChannel("eventra_p2p_mesh");
   }
   return signalingChannel;
