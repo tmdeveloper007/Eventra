@@ -4,6 +4,7 @@ export function sanitizeFilename(name) {
 }
 
 export function exportToCSV(data, filename) {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!data || !data.length) return;
   const headers = Object.keys(data[0]);
   const csvRows = [];
@@ -40,6 +41,7 @@ export function exportToCSV(data, filename) {
 }
 
 export function exportToJSON(data, filename) {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!data || !data.length) return;
   const jsonString = JSON.stringify(data, null, 2);
   const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' });
