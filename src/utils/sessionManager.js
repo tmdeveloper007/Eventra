@@ -26,6 +26,7 @@ const CACHE_KEYS_PREFIX = [
 ];
 
 export const clearAuthStorage = () => {
+  if (typeof window === "undefined") return false;
   try {
     // Clear known session keys
     SESSION_KEYS.forEach((key) => {
@@ -73,7 +74,7 @@ export const invalidateSession = async () => {
     clearAuthCookies();
 
     // Clear service worker caches for sensitive data
-    if ("caches" in window) {
+    if (typeof window !== "undefined" && "caches" in window) {
       try {
         const cacheNames = await caches.keys();
         await Promise.all(
@@ -85,6 +86,7 @@ export const invalidateSession = async () => {
 };
 
 export const isSessionValid = () => {
+  if (typeof window === "undefined") return false;
   try {
     const token =
       localStorage.getItem("token") ||
