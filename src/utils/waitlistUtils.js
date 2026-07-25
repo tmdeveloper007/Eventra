@@ -42,6 +42,7 @@ const getNotificationStorageKeys = (userId) => {
 };
 
 const writeNotificationToStorage = (notification, storageKey) => {
+  if (typeof window === "undefined") return;
   const raw = localStorage.getItem(storageKey);
   const notifications = raw ? safeJsonParse(raw, []) : [];
   notifications.unshift(notification);
@@ -127,6 +128,7 @@ const notifyWaitlistPositionChanges = async (eventId, beforeWaitlist, eventOrTit
 
 // Retrieve all waitlist entries across all events and users
 export const getGlobalWaitlist = () => {
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(GLOBAL_WAITLIST_KEY);
     return raw ? safeJsonParse(raw, []) : [];
@@ -140,6 +142,7 @@ export const getGlobalWaitlist = () => {
 
 // Persist waitlist entries globally (offline cache only)
 export const saveGlobalWaitlist = (records) => {
+  if (typeof window === "undefined") return;
   try {
     localStorage.setItem(GLOBAL_WAITLIST_KEY, JSON.stringify(records));
   } catch (error) {
@@ -165,6 +168,7 @@ export const syncWaitlistFromServer = async (eventId) => {
 
 // Get waitlist entries for a specific event with 'waiting' status
 export const getEventWaitlist = (eventId) => {
+  if (typeof window === "undefined") return [];
   const id = parseEventId(eventId);
   const records = getGlobalWaitlist();
   return records
@@ -174,6 +178,7 @@ export const getEventWaitlist = (eventId) => {
 
 // Calculate queue position (1-indexed) for a user on a specific event
 export const getQueuePosition = (eventId, userId) => {
+  if (typeof window === "undefined") return -1;
   const eventWaitlist = getEventWaitlist(eventId);
   const index = eventWaitlist.findIndex((r) => r.userId === userId);
   return index !== -1 ? index + 1 : -1;
@@ -181,6 +186,7 @@ export const getQueuePosition = (eventId, userId) => {
 
 // Add registration to specific user's localStorage registered events
 export const addRegistrationToUserStorage = (userId, event) => {
+  if (typeof window === "undefined") return;
   const legacyKey = `my_events_${userId}`;
   const storageKey = getOrMigrateKey("my_events", userId, legacyKey);
   try {
@@ -210,6 +216,7 @@ export const addRegistrationToUserStorage = (userId, event) => {
 
 // Add registration to event's attendees count
 export const incrementEventAttendees = (eventId) => {
+  if (typeof window === "undefined") return;
   // If event availability caches exist, update them
   try {
     const cacheKey = `event_detail_${eventId}`;
