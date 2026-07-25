@@ -32,6 +32,12 @@ export function useNotifications() {
     window.addEventListener("eventra-notifications-updated", handleUpdate);
     return () => {
       window.removeEventListener("eventra-notifications-updated", handleUpdate);
+      // Cleanup module-level state on unmount to prevent memory leaks
+      if (flushTimeout) {
+        clearTimeout(flushTimeout);
+        flushTimeout = null;
+      }
+      queue = [];
     };
   }, [load]);
 
@@ -61,6 +67,7 @@ export function useNotifications() {
   }, []);
 
   const markAllAsRead = useCallback(() => {
+    if (typeof window === "undefined") return;
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       const existing = raw ? JSON.parse(raw) : [];
