@@ -5,6 +5,8 @@ import { logger } from "./logger.js";
 import { getOrMigrateKey } from "./storageKeyManager.js";
 
 const GLOBAL_WAITLIST_KEY = "eventra_global_waitlists";
+const NOTIFICATION_INBOX_PREFIX = "eventra_notification_inbox";
+const CANONICAL_NOTIFICATION_INBOX_KEY = NOTIFICATION_INBOX_PREFIX;
 
 
 /**
@@ -31,17 +33,30 @@ const parseEventId = (eventId) => {
   return id;
 };
 
+const getNotificationStorageKeys = (userId) => {
+  const keys = new Set([CANONICAL_NOTIFICATION_INBOX_KEY]);
+  if (userId) {
+    keys.add(`${NOTIFICATION_INBOX_PREFIX}_${userId}`);
+  }
+  return [...keys];
+};
+
+const writeNotificationToStorage = (notification, storageKey) => {
+  if (typeof window === "undefined") return;
+  const raw = localStorage.getItem(storageKey);
+  const notifications = raw ? safeJsonParse(raw, []) : [];
+  notifications.unshift(notification);
+  localStorage.setItem(storageKey, JSON.stringify(notifications));
+};
+
 // Helper to add local notifications using localStorage
-export const addLocalNotification = async (title, message) => {
+export const addLocalNotification = async (title, message, options = {}) => {
   // SSR guard: localStorage and window are not available in Node.js/SSR environments
   if (typeof window === "undefined" || typeof localStorage === "undefined") {
     return;
   }
 
   try {
-    const canonicalKey = "eventra_notification_inbox";
-    const raw = localStorage.getItem(canonicalKey);
-    const notifications = raw ? safeJsonParse(raw, []) : [];
     const newNotification = {
       id: typeof crypto !== "undefined" && crypto.randomUUID
         ? `local-${crypto.randomUUID()}`
@@ -51,10 +66,14 @@ export const addLocalNotification = async (title, message) => {
       timestamp: new Date().toISOString(),
       title,
       message,
-      category: "registrations",
+      category: options.category || "registrations",
+      link: options.link,
+      recipientUserId: options.userId,
+      metadata: options.metadata,
     };
-    notifications.unshift(newNotification);
-    localStorage.setItem(canonicalKey, JSON.stringify(notifications));
+    getNotificationStorageKeys(options.userId).forEach((storageKey) => {
+      writeNotificationToStorage(newNotification, storageKey);
+    });
     // Trigger cross-component real-time sync
     window.dispatchEvent(new CustomEvent("eventra-notifications-updated"));
   } catch (error) {
@@ -62,8 +81,54 @@ export const addLocalNotification = async (title, message) => {
   }
 };
 
+const getWaitlistEventTitle = (eventId, eventOrTitle, records = []) => {
+  if (typeof eventOrTitle === "string" && eventOrTitle.trim()) return eventOrTitle.trim();
+  if (eventOrTitle?.title) return eventOrTitle.title;
+  const recordTitle = records.find((record) => record.eventTitle)?.eventTitle;
+  return recordTitle || `Event #${eventId}`;
+};
+
+const getPositionMap = (waitlist) =>
+  waitlist.reduce((positions, record, index) => {
+    positions.set(record.userId, index + 1);
+    return positions;
+  }, new Map());
+
+const notifyWaitlistPositionChanges = async (eventId, beforeWaitlist, eventOrTitle) => {
+  const afterWaitlist = getEventWaitlist(eventId);
+  if (!beforeWaitlist.length || !afterWaitlist.length) return;
+
+  const previousPositions = getPositionMap(beforeWaitlist);
+  const eventTitle = getWaitlistEventTitle(eventId, eventOrTitle, beforeWaitlist);
+
+  await Promise.all(
+    afterWaitlist.map(async (record, index) => {
+      const previousPosition = previousPositions.get(record.userId);
+      const currentPosition = index + 1;
+      if (!previousPosition || currentPosition >= previousPosition) return;
+
+      await addLocalNotification(
+        "Waitlist Position Updated",
+        `Your waitlist position for ${eventTitle} moved from #${previousPosition} to #${currentPosition}!`,
+        {
+          userId: record.userId,
+          category: "registrations",
+          metadata: {
+            type: "waitlist_position_changed",
+            eventId,
+            eventTitle,
+            previousPosition,
+            currentPosition,
+          },
+        }
+      );
+    })
+  );
+};
+
 // Retrieve all waitlist entries across all events and users
 export const getGlobalWaitlist = () => {
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(GLOBAL_WAITLIST_KEY);
     return raw ? safeJsonParse(raw, []) : [];
@@ -77,6 +142,7 @@ export const getGlobalWaitlist = () => {
 
 // Persist waitlist entries globally (offline cache only)
 export const saveGlobalWaitlist = (records) => {
+  if (typeof window === "undefined") return;
   try {
     localStorage.setItem(GLOBAL_WAITLIST_KEY, JSON.stringify(records));
   } catch (error) {
@@ -102,6 +168,7 @@ export const syncWaitlistFromServer = async (eventId) => {
 
 // Get waitlist entries for a specific event with 'waiting' status
 export const getEventWaitlist = (eventId) => {
+  if (typeof window === "undefined") return [];
   const id = parseEventId(eventId);
   const records = getGlobalWaitlist();
   return records
@@ -111,6 +178,7 @@ export const getEventWaitlist = (eventId) => {
 
 // Calculate queue position (1-indexed) for a user on a specific event
 export const getQueuePosition = (eventId, userId) => {
+  if (typeof window === "undefined") return -1;
   const eventWaitlist = getEventWaitlist(eventId);
   const index = eventWaitlist.findIndex((r) => r.userId === userId);
   return index !== -1 ? index + 1 : -1;
@@ -118,6 +186,7 @@ export const getQueuePosition = (eventId, userId) => {
 
 // Add registration to specific user's localStorage registered events
 export const addRegistrationToUserStorage = (userId, event) => {
+  if (typeof window === "undefined") return;
   const legacyKey = `my_events_${userId}`;
   const storageKey = getOrMigrateKey("my_events", userId, legacyKey);
   try {
@@ -147,6 +216,7 @@ export const addRegistrationToUserStorage = (userId, event) => {
 
 // Add registration to event's attendees count
 export const incrementEventAttendees = (eventId) => {
+  if (typeof window === "undefined") return;
   // If event availability caches exist, update them
   try {
     const cacheKey = `event_detail_${eventId}`;
@@ -187,6 +257,7 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
           "Anonymous",
         userEmail: user.email,
         phone: registrationForm.phone || "",
+        eventTitle: registrationForm.eventTitle || "the event",
         eventId: id,
         joinedAt: new Date().toISOString(),
         status: "waiting",
@@ -194,7 +265,11 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
       const records = getGlobalWaitlist();
       records.push(newEntry);
       saveGlobalWaitlist(records);
-      await addLocalNotification("Waitlist Joined", `You have successfully joined the waitlist for ${registrationForm.eventTitle || "the event"}.`);
+      await addLocalNotification(
+        "Waitlist Joined",
+        `You have successfully joined the waitlist for ${registrationForm.eventTitle || "the event"}.`,
+        { userId }
+      );
       return newEntry;
     }
     throw new Error(response.data?.message || "Server rejected waitlist join");
@@ -239,6 +314,7 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
       "Anonymous",
     userEmail: user.email,
     phone: registrationForm.phone || "",
+    eventTitle: registrationForm.eventTitle || "the event",
     eventId: id,
     joinedAt: new Date().toISOString(),
     status: "waiting",
@@ -249,7 +325,8 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
 
   await addLocalNotification(
     "Waitlist Joined (Offline)",
-    `You have been added to the offline waitlist for ${registrationForm.eventTitle || "the event"}. It will sync when you are back online.`
+    `You have been added to the offline waitlist for ${registrationForm.eventTitle || "the event"}. It will sync when you are back online.`,
+    { userId }
   );
 
   return newEntry;
@@ -258,6 +335,7 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
 // Leave waitlist - tries server first, falls back to localStorage
 export const leaveWaitlist = async (eventId, userId) => {
   const id = parseEventId(eventId);
+  const beforeWaitlist = getEventWaitlist(id);
 
   try {
     const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist/leave`, { userId });
@@ -271,7 +349,8 @@ export const leaveWaitlist = async (eventId, userId) => {
         records[matchIndex].removedAt = new Date().toISOString();
         saveGlobalWaitlist(records);
       }
-      await addLocalNotification("Left Waitlist", "You have left the waitlist.");
+      await addLocalNotification("Left Waitlist", "You have left the waitlist.", { userId });
+      await notifyWaitlistPositionChanges(id, beforeWaitlist);
       return true;
     }
   } catch {
@@ -288,7 +367,8 @@ export const leaveWaitlist = async (eventId, userId) => {
   records[matchIndex].status = "removed";
   records[matchIndex].removedAt = new Date().toISOString();
   saveGlobalWaitlist(records);
-  await addLocalNotification("Left Waitlist", "You have left the waitlist.");
+  await addLocalNotification("Left Waitlist", "You have left the waitlist.", { userId });
+  await notifyWaitlistPositionChanges(id, beforeWaitlist);
   return true;
 };
 
@@ -307,7 +387,8 @@ const performLocalPromotion = async (record, event) => {
   incrementEventAttendees(event.id);
   await addLocalNotification(
     "Waitlist Promotion",
-    `Good news! You have been promoted from the waitlist to a confirmed attendee for: ${event.title || "your event"}.`
+    `Good news! You have been promoted from the waitlist to a confirmed attendee for: ${event.title || "your event"}.`,
+    { userId: record.userId }
   );
   return !!match;
 };
@@ -324,13 +405,20 @@ const checkIfOffline = (error) => {
 };
 
 // Promote a specific record to a confirmed registration
-export const promoteRecord = async (record, event) => {
+export const promoteRecord = async (record, event, options = {}) => {
+  const shouldNotifyPositionChanges = options.notifyPositionChanges !== false;
+  const beforeWaitlist = shouldNotifyPositionChanges
+    ? getEventWaitlist(record.eventId)
+    : [];
   try {
     const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${event.id}/waitlist/promote`, {
       userId: record.userId,
     });
     if (response.ok) {
-      await performLocalPromotion(record, event);
+      const promoted = await performLocalPromotion(record, event);
+      if (promoted && shouldNotifyPositionChanges) {
+        await notifyWaitlistPositionChanges(record.eventId, beforeWaitlist, event);
+      }
       return true;
     }
     // Explicit server rejection
@@ -341,7 +429,11 @@ export const promoteRecord = async (record, event) => {
     }
   }
 
-  return performLocalPromotion(record, event);
+  const promoted = await performLocalPromotion(record, event);
+  if (promoted && shouldNotifyPositionChanges) {
+    await notifyWaitlistPositionChanges(record.eventId, beforeWaitlist, event);
+  }
+  return promoted;
 };
 
 // Promote the next user in queue when a spot opens up
@@ -391,11 +483,14 @@ export const handleCapacityIncrease = async (event, newCapacity) => {
   if (spotsToFill <= 0) return 0;
 
   const eventWaitlist = getEventWaitlist(event.id);
+  const beforeWaitlist = [...eventWaitlist];
   const countToPromote = Math.min(spotsToFill, eventWaitlist.length);
 
   for (let i = 0; i < countToPromote; i++) {
-    await promoteRecord(eventWaitlist[i], event);
+    await promoteRecord(eventWaitlist[i], event, { notifyPositionChanges: false });
   }
+
+  await notifyWaitlistPositionChanges(event.id, beforeWaitlist, event);
 
   return countToPromote;
 };
@@ -403,6 +498,7 @@ export const handleCapacityIncrease = async (event, newCapacity) => {
 // Organizer action to manually remove a user
 export const organizerRemoveUser = async (eventId, userId) => {
   const id = parseEventId(eventId);
+  const beforeWaitlist = getEventWaitlist(id);
 
   try {
     const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist/remove`, {
@@ -418,7 +514,12 @@ export const organizerRemoveUser = async (eventId, userId) => {
         records[matchIndex].removedAt = new Date().toISOString();
         saveGlobalWaitlist(records);
       }
-      await addLocalNotification("Removed from Waitlist", `You have been removed from the waitlist for Event #${id} by the organizer.`);
+      await addLocalNotification(
+        "Removed from Waitlist",
+        `You have been removed from the waitlist for Event #${id} by the organizer.`,
+        { userId }
+      );
+      await notifyWaitlistPositionChanges(id, beforeWaitlist);
       return true;
     }
   } catch {
@@ -440,8 +541,10 @@ export const organizerRemoveUser = async (eventId, userId) => {
 
   await addLocalNotification(
     "Removed from Waitlist",
-    `You have been removed from the waitlist for Event #${id} by the organizer.`
+    `You have been removed from the waitlist for Event #${id} by the organizer.`,
+    { userId }
   );
+  await notifyWaitlistPositionChanges(id, beforeWaitlist);
 
   return true;
 };
