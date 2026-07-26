@@ -10,6 +10,7 @@ const MAX_AUDIT_ENTRIES = 100;
  * @param {object} details - Optional event metadata.
  */
 export const logAuthEvent = (event, details = {}) => {
+  if (typeof window === "undefined") return;
   try {
     const auditLog = JSON.parse(localStorage.getItem(AUTH_AUDIT_KEY) || "[]");
 
@@ -42,6 +43,7 @@ export const logAuthEvent = (event, details = {}) => {
  * Returns all stored audit events.
  */
 export const getAuthAuditLog = () => {
+  if (typeof window === "undefined") return [];
   try {
     return JSON.parse(localStorage.getItem(AUTH_AUDIT_KEY) || "[]");
   } catch {
@@ -53,5 +55,8 @@ export const getAuthAuditLog = () => {
  * Clears the stored audit log.
  */
 export const clearAuthAuditLog = () => {
-  localStorage.removeItem(AUTH_AUDIT_KEY);
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(AUTH_AUDIT_KEY);
+  } catch {}
 };
