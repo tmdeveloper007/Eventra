@@ -174,6 +174,8 @@ export const downloadIcs = (
   events: Event[],
   filename = "eventra-schedule.ics"
 ): void => {
+  if (typeof document === "undefined") return;
+
   const content = generateIcsContent(events);
   const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
