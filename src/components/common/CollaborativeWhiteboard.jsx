@@ -29,7 +29,6 @@ const COLORS = [
 
 export default function CollaborativeWhiteboard() {
   const canvasRef = useRef(null);
-  const containerRef = useRef(null);
   const bcRef = useRef(null);
   const dbRef = useRef(null);
 
@@ -50,6 +49,9 @@ export default function CollaborativeWhiteboard() {
 
   // Generate a random client peer identifier
   const peerId = useRef(`peer_${Math.random().toString(36).substring(2, 7)}`);
+  // Track which peers have responded in the current ping cycle to avoid
+  // double-counting the same peer when it sends multiple PONGs.
+  const seenPeersThisCycleRef = useRef(new Set());
   const [peersCount, setPeersCount] = useState(1);
 
   // Initialize IndexedDB
@@ -191,6 +193,7 @@ export default function CollaborativeWhiteboard() {
     // Ping peers count check
     const interval = setInterval(() => {
       if (bcRef.current) {
+        seenPeersThisCycleRef.current = new Set(); // reset cycle tracking
         setPeersCount(1); // reset to self before each ping cycle
         bcRef.current.postMessage({ type: "WHITEBOARD_PING", from: peerId.current });
       }
@@ -205,10 +208,15 @@ export default function CollaborativeWhiteboard() {
           bcRef.current.postMessage({ type: "WHITEBOARD_PONG", from: peerId.current });
           break;
 
-        case "WHITEBOARD_PONG":
-          // Simple heuristic for counting active tabs
-          setPeersCount(p => Math.min(6, p + 1));
+        case "WHITEBOARD_PONG": {
+          // Only count each unique peer once per cycle. If a peer closes
+          // and never sends a PONG in the next cycle, it won't be counted.
+          if (!seenPeersThisCycleRef.current.has(msg.from)) {
+            seenPeersThisCycleRef.current.add(msg.from);
+            setPeersCount(p => Math.min(6, p + 1));
+          }
           break;
+        }
 
         case "WHITEBOARD_STROKE_START":
           setRemoteActiveStrokes((prev) => ({
@@ -521,7 +529,7 @@ export default function CollaborativeWhiteboard() {
   };
 
   return (
-    <div className="flex flex-col gap-6" ref={containerRef}>
+    <>
       {/* HUD Whiteboard Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-900 border border-slate-800 rounded-3xl shadow-lg">
         {/* Tools Select Group */}
@@ -684,6 +692,6 @@ export default function CollaborativeWhiteboard() {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </>
   );
 }
