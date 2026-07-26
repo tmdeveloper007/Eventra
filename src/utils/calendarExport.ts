@@ -21,7 +21,7 @@ import type { Event } from "../components/EventTimeline";
  *
  * Falls back to midnight on the given date when `timeStr` is absent or unparseable.
  */
-const parseEventDateTime = (dateStr: string, timeStr: string): Date => {
+export const parseEventDateTime = (dateStr: string, timeStr = ""): Date => {
   const base = new Date(dateStr);
   if (isNaN(base.getTime())) return new Date(0);
 
@@ -174,6 +174,8 @@ export const downloadIcs = (
   events: Event[],
   filename = "eventra-schedule.ics"
 ): void => {
+  if (typeof document === "undefined") return;
+
   const content = generateIcsContent(events);
   const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
