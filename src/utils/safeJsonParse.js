@@ -18,6 +18,7 @@ export function safeJsonParse(str, fallback = null, validator = null) {
  * @returns {*} Parsed value or fallback
  */
 export function safeJsonParseFromStorage(key, fallback = null) {
+  if (typeof localStorage === "undefined") return fallback;
   try {
     const value = localStorage.getItem(key);
     if (value === null) return fallback;
