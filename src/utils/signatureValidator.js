@@ -107,6 +107,13 @@ const cleanupInterval = setInterval(() => {
   }
 }, 60000);
 
-if (cleanupInterval && typeof cleanupInterval.unref === "function") {
-  cleanupInterval.unref();
-}
+/**
+ * Stop the nonce cleanup interval.
+ * Call this during application teardown or module hot-replacement
+ * to prevent memory leaks from uncleared intervals.
+ */
+export const stopCleanupInterval = () => {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+  }
+};
