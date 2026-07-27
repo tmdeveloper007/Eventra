@@ -89,6 +89,16 @@ function saveAppStateSnapshot() {
 }
 
 function buildDiagnosticReport(errorId, error, errorInfo) {
+  const isBrowser = typeof window !== "undefined" && typeof navigator !== "undefined";
+  const currentUrl = isBrowser ? sanitizeUrl(window.location.href) : "N/A (SSR)";
+  const userAgent = isBrowser ? navigator.userAgent : "N/A (SSR)";
+  const screenSize = isBrowser ? `${window.innerWidth}x${window.innerHeight}` : "N/A (SSR)";
+  const devicePixelRatio = isBrowser ? window.devicePixelRatio : "N/A (SSR)";
+  const onlineStatus = isBrowser ? navigator.onLine : "N/A (SSR)";
+  const language = isBrowser ? navigator.language : "N/A (SSR)";
+  const platform = isBrowser ? navigator.platform : "N/A (SSR)";
+  const cookiesEnabled = isBrowser ? navigator.cookieEnabled : "N/A (SSR)";
+
   // Fix for #7246: each IIFE must fully close its try/catch block before the
   // next declaration so the parser does not misread subsequent class methods
   // (e.g. handleTryAgain) as being inside this function's scope.
@@ -125,11 +135,11 @@ function buildDiagnosticReport(errorId, error, errorInfo) {
   return `=== EVENTRA DIAGNOSTIC REPORT ===
 Error ID      : ${errorId}
 Timestamp     : ${new Date().toISOString()}
-URL           : ${sanitizeUrl(window.location.href)}
-User-Agent    : ${navigator.userAgent}
-Screen Size   : ${window.innerWidth}x${window.innerHeight}
-Device Pixel  : ${window.devicePixelRatio}
-Online Status : ${navigator.onLine}
+URL           : ${currentUrl}
+User-Agent    : ${userAgent}
+Screen Size   : ${screenSize}
+Device Pixel  : ${devicePixelRatio}
+Online Status : ${onlineStatus}
 
 --- Error ---
 ${error ? error.toString() : "Unknown error"}
@@ -147,9 +157,9 @@ ${lsSnapshot}
 ${sessionSnapshot}
 
 --- Browser Info ---
-Language: ${navigator.language}
-Platform: ${navigator.platform}
-Cookies Enabled: ${navigator.cookieEnabled}
+Language: ${language}
+Platform: ${platform}
+Cookies Enabled: ${cookiesEnabled}
 --- End of Report ---`;
 }
 
