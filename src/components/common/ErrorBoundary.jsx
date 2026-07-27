@@ -12,12 +12,10 @@ import {
 } from "utils/errorRecovery";
 
 function generateErrorId() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let id = "EV-";
-  for (let i = 0; i < 6; i++) {
-    id += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return id;
+  const uuid = (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID().replace(/-/g, '').slice(0, 6).toUpperCase()
+    : Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  return `EV-${uuid}`;
 }
 
 const SENSITIVE_URL_PARAMS = new Set([
@@ -122,14 +120,16 @@ function buildDiagnosticReport(errorId, error, errorInfo) {
     }
   })();
 
+  const isServer = typeof window === 'undefined';
+
   return `=== EVENTRA DIAGNOSTIC REPORT ===
 Error ID      : ${errorId}
 Timestamp     : ${new Date().toISOString()}
-URL           : ${sanitizeUrl(window.location.href)}
-User-Agent    : ${navigator.userAgent}
-Screen Size   : ${window.innerWidth}x${window.innerHeight}
-Device Pixel  : ${window.devicePixelRatio}
-Online Status : ${navigator.onLine}
+URL           : ${isServer ? 'N/A (SSR)' : sanitizeUrl(window.location.href)}
+User-Agent    : ${isServer ? 'N/A (SSR)' : navigator.userAgent}
+Screen Size   : ${isServer ? 'N/A (SSR)' : window.innerWidth + 'x' + window.innerHeight}
+Device Pixel  : ${isServer ? 'N/A (SSR)' : window.devicePixelRatio}
+Online Status : ${isServer ? 'N/A (SSR)' : navigator.onLine}
 
 --- Error ---
 ${error ? error.toString() : "Unknown error"}
