@@ -1,6 +1,7 @@
 const LOCK_EXPIRY_MS = 600000; // 10 minutes lease time
 
 export function acquireRegistrationLock(eventId) {
+  if (typeof localStorage === "undefined") return false;
   try {
     const now = Date.now();
     const lockKey = `reg_lock_${eventId}`;
@@ -21,6 +22,7 @@ export function acquireRegistrationLock(eventId) {
 }
 
 export function releaseRegistrationLock(eventId) {
+  if (typeof localStorage === "undefined") return true;
   try {
     localStorage.removeItem(`reg_lock_${eventId}`);
     return true;
