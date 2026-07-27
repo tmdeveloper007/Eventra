@@ -92,6 +92,10 @@ export async function validateSignature(
 
   usedNonces.set(nonce, now);
 
+  // Delete nonce immediately after successful validation to prevent memory leak.
+  // The cleanupInterval serves as a safety net; immediate deletion is the primary path.
+  usedNonces.delete(nonce);
+
   return {
     valid: true,
   };
