@@ -127,6 +127,7 @@ const useLocalStorage = (key, initialValue) => {
 
 export default useLocalStorage;
 export const isLocalStorageAvailable = () => {
+  if (typeof window === "undefined" || !window.localStorage) return false;
   try {
     const testKey = "__storage_test__";
     window.localStorage.setItem(testKey, testKey);
