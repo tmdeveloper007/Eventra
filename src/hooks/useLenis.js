@@ -67,7 +67,7 @@ import Lenis from "lenis";
 const useLenis = (options = {}) => {
   useEffect(() => {
     // Check if the primary pointer is coarse (touch device) to preserve native feel
-    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+    const isTouchDevice = (typeof window === "undefined" || !window.matchMedia) ? false : window.matchMedia('(pointer: coarse)').matches;
     if (isTouchDevice) {
       return;
     }
