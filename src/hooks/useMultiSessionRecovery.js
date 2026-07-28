@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   cleanupExpiredRecoverySessions,
   createRecoverySession,
@@ -27,6 +27,10 @@ export const useMultiSessionRecovery = ({
   );
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Keep a ref so callbacks always read the latest state without stale closures
+  const localSessionsRef = useRef(localSessions);
+  useEffect(() => { localSessionsRef.current = localSessions; }, [localSessions]);
+
   useEffect(() => {
     setLocalSessions((current) =>
       normalizeMultiSessions([...current, ...readMultiSessions(storage, storageKey), ...initialSessions]),
@@ -45,36 +49,36 @@ export const useMultiSessionRecovery = ({
   const createSession = useCallback(
     (input) => {
       const session = createRecoverySession(input);
-      persist(upsertRecoverySession(localSessions, session));
+      persist(upsertRecoverySession(localSessionsRef.current, session));
       return session;
     },
-    [localSessions, persist],
+    [persist],
   );
 
   const upsertSession = useCallback(
-    (session) => persist(upsertRecoverySession(localSessions, session)),
-    [localSessions, persist],
+    (session) => persist(upsertRecoverySession(localSessionsRef.current, session)),
+    [persist],
   );
 
   const updateSession = useCallback(
     (sessionId, patch) =>
-      persist(updateRecoverySessionEntry(localSessions, sessionId, patch)),
-    [localSessions, persist],
+      persist(updateRecoverySessionEntry(localSessionsRef.current, sessionId, patch)),
+    [persist],
   );
 
   const renameSession = useCallback(
-    (sessionId, name) => persist(renameRecoverySessionEntry(localSessions, sessionId, name)),
-    [localSessions, persist],
+    (sessionId, name) => persist(renameRecoverySessionEntry(localSessionsRef.current, sessionId, name)),
+    [persist],
   );
 
   const deleteSession = useCallback(
-    (sessionId) => persist(deleteRecoverySessionEntry(localSessions, sessionId)),
-    [localSessions, persist],
+    (sessionId) => persist(deleteRecoverySessionEntry(localSessionsRef.current, sessionId)),
+    [persist],
   );
 
   const cleanupExpired = useCallback(
-    () => persist(cleanupExpiredRecoverySessions(localSessions)),
-    [localSessions, persist],
+    () => persist(cleanupExpiredRecoverySessions(localSessionsRef.current)),
+    [persist],
   );
 
   const replaceSessions = useCallback(
