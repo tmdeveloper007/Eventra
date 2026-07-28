@@ -18,8 +18,9 @@ export function safeJsonParse(str, fallback = null, validator = null) {
  * @returns {*} Parsed value or fallback
  */
 export function safeJsonParseFromStorage(key, fallback = null) {
+  if (typeof window === "undefined") return fallback;
   try {
-    const value = localStorage.getItem(key);
+    const value = window.localStorage.getItem(key);
     if (value === null) return fallback;
     const parsed = JSON.parse(value);
     return parsed;
@@ -27,7 +28,7 @@ export function safeJsonParseFromStorage(key, fallback = null) {
     console.error(`[safeJsonParseFromStorage] Failed to parse localStorage key "${key}":`, error);
     console.error('[safeJsonParseFromStorage] Removing corrupted entry and returning fallback');
     try {
-      localStorage.removeItem(key);
+      window.localStorage.removeItem(key);
     } catch (removeError) {
       console.error('[safeJsonParseFromStorage] Failed to remove corrupted entry:', removeError);
     }
