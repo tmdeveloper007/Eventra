@@ -49,13 +49,31 @@ const sanitizeValue = (value) => {
   return typeof value === "string" ? value : JSON.stringify(value);
 };
 
+/**
+ * SSR guard — returns true when localStorage/sessionStorage are unavailable
+ * (e.g., Node.js, SSR, test environments).
+ */
+const isStorageAvailable = (useSession) => {
+  if (typeof window === "undefined") return false;
+  try {
+    const storage = useSession ? window.sessionStorage : window.localStorage;
+    const testKey = "__eventra_storage_test__";
+    storage.setItem(testKey, "1");
+    storage.removeItem(testKey);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const safeSet = (key, value, useSession = false) => {
+  if (!isStorageAvailable(useSession)) return false;
   try {
     if (isSensitiveKey(key)) {
       console.warn(`[SecureStorage] Blocked storing sensitive key: "${key}"`);
       return false;
     }
-    const storage = useSession ? sessionStorage : localStorage;
+    const storage = useSession ? window.sessionStorage : window.localStorage;
     storage.setItem(key, sanitizeValue(value));
     return true;
   } catch {
@@ -64,8 +82,9 @@ export const safeSet = (key, value, useSession = false) => {
 };
 
 export const safeGet = (key, useSession = false) => {
+  if (!isStorageAvailable(useSession)) return null;
   try {
-    const storage = useSession ? sessionStorage : localStorage;
+    const storage = useSession ? window.sessionStorage : window.localStorage;
     const value = storage.getItem(key);
     if (!value) return null;
     try {
@@ -79,8 +98,9 @@ export const safeGet = (key, useSession = false) => {
 };
 
 export const safeRemove = (key, useSession = false) => {
+  if (!isStorageAvailable(useSession)) return false;
   try {
-    const storage = useSession ? sessionStorage : localStorage;
+    const storage = useSession ? window.sessionStorage : window.localStorage;
     storage.removeItem(key);
     return true;
   } catch {
@@ -90,13 +110,14 @@ export const safeRemove = (key, useSession = false) => {
 
 export const auditStorage = () => {
   const issues = [];
+  if (!isStorageAvailable(false) && !isStorageAvailable(true)) return issues;
   try {
     // Check localStorage
-    Object.keys(localStorage).forEach((key) => {
+    Object.keys(window.localStorage).forEach((key) => {
       if (isSensitiveKey(key)) {
         issues.push({ storage: "localStorage", key, risk: "sensitive key name" });
       }
-      const value = localStorage.getItem(key);
+      const value = window.localStorage.getItem(key);
       BLOCKED_KEYS.forEach((blocked) => {
         if (value && value.toLowerCase().includes(`"${blocked.toLowerCase()}":`)) {
           issues.push({ storage: "localStorage", key, risk: `contains sensitive field: ${blocked}` });
@@ -105,7 +126,7 @@ export const auditStorage = () => {
     });
 
     // Check sessionStorage
-    Object.keys(sessionStorage).forEach((key) => {
+    Object.keys(window.sessionStorage).forEach((key) => {
       if (isSensitiveKey(key)) {
         issues.push({ storage: "sessionStorage", key, risk: "sensitive key name" });
       }
@@ -116,15 +137,16 @@ export const auditStorage = () => {
 };
 
 export const cleanSensitiveData = () => {
+  if (!isStorageAvailable(false) && !isStorageAvailable(true)) return false;
   try {
-    [...Object.keys(localStorage)].forEach((key) => {
+    [...Object.keys(window.localStorage)].forEach((key) => {
       if (isSensitiveKey(key)) {
-        localStorage.removeItem(key);
+        window.localStorage.removeItem(key);
       }
     });
-    [...Object.keys(sessionStorage)].forEach((key) => {
+    [...Object.keys(window.sessionStorage)].forEach((key) => {
       if (isSensitiveKey(key)) {
-        sessionStorage.removeItem(key);
+        window.sessionStorage.removeItem(key);
       }
     });
     return true;
