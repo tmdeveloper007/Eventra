@@ -3,8 +3,12 @@ import { safeJsonParse } from "./safeJsonParse.js";
 const STORAGE_KEY = "event_creation_draft";
 
 const isStorageAvailable = () => {
+  if (typeof window === "undefined") return false;
   try {
-    return typeof localStorage !== "undefined" && localStorage !== null;
+    const testKey = "__storage_test__";
+    localStorage.setItem(testKey, testKey);
+    localStorage.removeItem(testKey);
+    return true;
   } catch {
     return false;
   }
