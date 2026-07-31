@@ -1,4 +1,13 @@
 export const getSecurityHeadersDiagnostics = () => {
+  if (typeof document === "undefined") {
+    return [{
+      name: "Content-Security-Policy",
+      value: "SSR: unavailable",
+      status: "warning",
+      recommendation: "Run in browser environment for diagnostics.",
+    }];
+  }
+
   const diagnostics = [];
 
   const cspMeta = document.querySelector(
