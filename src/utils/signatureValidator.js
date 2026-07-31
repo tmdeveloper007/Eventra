@@ -8,10 +8,10 @@
  */
 
 const usedNonces = new Map();
-
 const MAX_REQUEST_AGE_MS = 5 * 60 * 1000;
 
-// Resolve a crypto-like object available in the current environment.
+let _cleanupInterval = null;
+
 const getCrypto = () => {
   if (typeof globalThis !== "undefined" && globalThis.crypto?.subtle) {
     return globalThis.crypto;
@@ -22,11 +22,6 @@ const getCrypto = () => {
   return null;
 };
 
-/**
- * Compute HMAC-SHA256 using the Web Crypto API.
- * Returns a hex string identical to what crypto.createHmac('sha256', secret)
- * would produce, but works in browsers.
- */
 const hmacSha256Hex = async (secret, data) => {
   const c = getCrypto();
   if (!c) {
@@ -78,35 +73,58 @@ export async function validateSignature(
     };
   }
 
+  // Record nonce BEFORE the async HMAC to close the race window.
+  // If HMAC fails (invalid sig), clear it immediately so the nonce can be retried.
+  usedNonces.set(nonce, now);
+
   const expectedSignature = await hmacSha256Hex(
     secret,
     JSON.stringify(payload) + timestamp + nonce
   );
 
   if (expectedSignature !== signature) {
+    usedNonces.delete(nonce); // Allow retry on invalid signature
     return {
       valid: false,
       error: "Invalid signature",
     };
   }
 
-  usedNonces.set(nonce, now);
-
   return {
     valid: true,
   };
 }
 
-const cleanupInterval = setInterval(() => {
-  const now = Date.now();
+export const clearNonceCache = () => {
+  usedNonces.clear();
+};
 
-  for (const [nonce, timestamp] of usedNonces) {
-    if (now - timestamp > MAX_REQUEST_AGE_MS) {
-      usedNonces.delete(nonce);
+const _startCleanupInterval = () => {
+  if (_cleanupInterval) return;
+  _cleanupInterval = setInterval(() => {
+    const now = Date.now();
+    for (const [nonce, timestamp] of usedNonces) {
+      if (now - timestamp > MAX_REQUEST_AGE_MS) {
+        usedNonces.delete(nonce);
+      }
     }
-  }
-}, 60000);
+  }, 60000);
+};
 
-if (cleanupInterval && typeof cleanupInterval.unref === "function") {
-  cleanupInterval.unref();
+const _stopCleanupInterval = () => {
+  if (_cleanupInterval) {
+    clearInterval(_cleanupInterval);
+    _cleanupInterval = null;
+  }
+};
+
+export const cleanupSignatureValidator = () => {
+  _stopCleanupInterval();
+  usedNonces.clear();
+};
+
+if (typeof window !== "undefined") {
+  window.addEventListener("unload", cleanupSignatureValidator);
 }
+
+_startCleanupInterval();
