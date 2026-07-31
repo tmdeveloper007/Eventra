@@ -6,6 +6,8 @@ export const logSecurityEvent = (
   message,
   metadata = {}
 ) => {
+  if (typeof window === "undefined") return null;
+
   try {
     const event = {
       id:
@@ -35,6 +37,8 @@ export const logSecurityEvent = (
 };
 
 export const getSecurityEvents = () => {
+  if (typeof window === "undefined") return [];
+
   try {
     return JSON.parse(
       localStorage.getItem(STORAGE_KEY) || "[]"
@@ -45,5 +49,11 @@ export const getSecurityEvents = () => {
 };
 
 export const clearSecurityEvents = () => {
-  localStorage.removeItem(STORAGE_KEY);
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
 };
