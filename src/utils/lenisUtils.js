@@ -4,19 +4,29 @@
  */
 
 /**
+ * Returns true if window.lenis is available in the current environment.
+ */
+const isLenisAvailable = () =>
+  typeof window !== "undefined" && typeof window.lenis !== "undefined" && window.lenis !== null;
+
+/**
  * Scroll to a specific element smoothly
  * @param {string} selector - CSS selector for the target element
  * @param {Object} options - Scroll options
  */
 export const scrollToElement = (selector, options = {}) => {
+  if (typeof window === "undefined") return;
   const element = document.querySelector(selector);
-  if (element && window.lenis) {
+  if (!element) return;
+  if (isLenisAvailable()) {
     window.lenis.scrollTo(element, {
       offset: 0,
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       ...options,
     });
+  } else {
+    element.scrollIntoView({ behavior: "smooth", ...options });
   }
 };
 
@@ -25,7 +35,9 @@ export const scrollToElement = (selector, options = {}) => {
  * @param {Object} options - Scroll options
  */
 export const scrollToTop = (options = {}) => {
-  if (window.lenis) {
+  if (typeof window === "undefined") return;
+
+  if (isLenisAvailable()) {
     window.lenis.scrollTo(0, {
       duration: 1.2,
       ...options,
@@ -43,7 +55,8 @@ export const scrollToTop = (options = {}) => {
  * Stop Lenis scrolling (useful for modals)
  */
 export const stopScroll = () => {
-  if (window.lenis) {
+  if (typeof window === "undefined") return;
+  if (isLenisAvailable()) {
     window.lenis.stop();
   }
 };
@@ -52,7 +65,8 @@ export const stopScroll = () => {
  * Start Lenis scrolling
  */
 export const startScroll = () => {
-  if (window.lenis) {
+  if (typeof window === "undefined") return;
+  if (isLenisAvailable()) {
     window.lenis.start();
   }
 };
@@ -62,5 +76,9 @@ export const startScroll = () => {
  * @returns {number} Current scroll position
  */
 export const getScrollPosition = () => {
-  return window.lenis ? window.lenis.scroll : window.scrollY;
+  if (typeof window === "undefined") return 0;
+  if (isLenisAvailable()) {
+    return window.lenis.scroll;
+  }
+  return window.scrollY;
 };
